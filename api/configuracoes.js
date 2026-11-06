@@ -1,4 +1,5 @@
-// Regras de cobrança (multa, juros e tolerância): /api/configuracoes
+// Configurações do anfitrião (engrenagem): /api/configuracoes
+//   cobrança (multa, juros, tolerância), padrões para contratos novos e aviso de vencimento
 //   GET -> regras atuais (ou as padrão, se ainda não foram salvas)
 //   PUT -> salva as regras (só o anfitrião). Com "aplicar_todos", atualiza todos os contratos.
 import {
@@ -10,7 +11,24 @@ import {
   traduzirErroBanco,
 } from './_lib/supabase.js';
 
-const PADRAO = { cobrar_multa: true, multa_padrao: 2, cobrar_juros: true, juros_padrao: 1, dias_tolerancia: 0 };
+const PADRAO = {
+  cobrar_multa: true,
+  multa_padrao: 2,
+  cobrar_juros: true,
+  juros_padrao: 1,
+  dias_tolerancia: 0,
+  indice_padrao: 'IGP-M',
+  duracao_meses: 12,
+  dia_vencimento_padrao: 10,
+  aviso_vencimento_dias: 30,
+};
+const INDICES = ['IGP-M', 'IPCA', 'Livre'];
+
+function inteiro(valor, minimo, maximo, mensagem) {
+  const numero = Number(valor);
+  if (!Number.isInteger(numero) || numero < minimo || numero > maximo) throw new ErroApi(400, mensagem);
+  return numero;
+}
 
 function percentual(valor, rotulo) {
   const numero = Number(valor);
@@ -32,12 +50,11 @@ export default rota(async (req, res) => {
   }
 
   if (req.method === 'PUT') {
-    if (perfil.papel !== 'anfitriao') throw new ErroApi(403, 'Apenas o anfitrião pode alterar as regras de cobrança.');
+    if (perfil.papel !== 'anfitriao') throw new ErroApi(403, 'Apenas o anfitrião pode alterar as configurações.');
     const corpo = req.body || {};
-    const tolerancia = Number(corpo.dias_tolerancia ?? 0);
-    if (!Number.isInteger(tolerancia) || tolerancia < 0 || tolerancia > 31) {
-      throw new ErroApi(400, 'A tolerância precisa ser de 0 a 31 dias.');
-    }
+    const tolerancia = inteiro(corpo.dias_tolerancia ?? 0, 0, 31, 'A tolerância precisa ser de 0 a 31 dias.');
+    const indice = corpo.indice_padrao ?? PADRAO.indice_padrao;
+    if (!INDICES.includes(indice)) throw new ErroApi(400, 'Índice de reajuste inválido.');
     const regras = {
       id: usuario.id,
       cobrar_multa: Boolean(corpo.cobrar_multa),
@@ -45,6 +62,10 @@ export default rota(async (req, res) => {
       cobrar_juros: Boolean(corpo.cobrar_juros),
       juros_padrao: percentual(corpo.juros_padrao ?? 0, 'Os juros'),
       dias_tolerancia: tolerancia,
+      indice_padrao: indice,
+      duracao_meses: inteiro(corpo.duracao_meses ?? 12, 1, 120, 'A duração precisa ser de 1 a 120 meses.'),
+      dia_vencimento_padrao: inteiro(corpo.dia_vencimento_padrao ?? 10, 1, 31, 'O dia de vencimento precisa ser de 1 a 31.'),
+      aviso_vencimento_dias: inteiro(corpo.aviso_vencimento_dias ?? 30, 0, 180, 'O aviso precisa ser de 0 a 180 dias.'),
       atualizado_em: new Date().toISOString(),
     };
 
