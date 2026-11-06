@@ -15,9 +15,9 @@ import {
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
 
-export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, recarregar, irPara, abrirInquilino }) {
+export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
-  const lista = useMemo(() => analisarContratos(contratos, pagamentos), [contratos, pagamentos]);
+  const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const ativos = lista.filter((c) => c.situacao.tipo !== 'encerrado');
 
   // ---------- Pontos de atenção ----------

@@ -9,9 +9,9 @@ import DetalheSolicitacao from './DetalheSolicitacao';
 import { analisarContratos, dataBR, moeda, semAcento } from '../utils';
 import { HistoricoPagamentos, ModalPagamento } from './Pagamentos';
 
-export default function Inquilinos({ inquilinos, contratos: contratosBrutos, solicitacoes, pagamentos, recarregar, abertoId, abrir }) {
+export default function Inquilinos({ inquilinos, contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
   // Contratos com o status de pagamento calculado pelos pagamentos registrados
-  const contratos = useMemo(() => analisarContratos(contratosBrutos, pagamentos), [contratosBrutos, pagamentos]);
+  const contratos = useMemo(() => analisarContratos(contratosBrutos, pagamentos, regras), [contratosBrutos, pagamentos, regras]);
   const [busca, setBusca] = useState('');
   const [formulario, setFormulario] = useState(null);
 
@@ -23,6 +23,7 @@ export default function Inquilinos({ inquilinos, contratos: contratosBrutos, sol
         inquilinos={inquilinos}
         contratos={contratos.filter((c) => c.inquilino_id === aberto.id)}
         solicitacoes={solicitacoes.filter((s) => s.contratos?.inquilino_id === aberto.id)}
+        regras={regras}
         recarregar={recarregar}
         voltar={() => abrir(null)}
       />
@@ -128,7 +129,7 @@ function idade(dataNascimento) {
   return anos;
 }
 
-function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, recarregar, voltar }) {
+function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, recarregar, voltar }) {
   const { avisar, confirmar } = useUI();
   const [editando, setEditando] = useState(false);
   const [novoContrato, setNovoContrato] = useState(false);
@@ -322,6 +323,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, recarr
       {novoContrato && (
         <FormContrato
           inquilinos={inquilinos}
+          regras={regras}
           inquilinoFixo={inquilino.id}
           aoFechar={() => setNovoContrato(false)}
           aoSalvar={() => {

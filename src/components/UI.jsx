@@ -15,8 +15,8 @@ export function UIProvider({ children }) {
   }, []);
 
   const confirmar = useCallback(
-    (titulo, texto, rotuloBotao = 'Excluir') =>
-      new Promise((resolve) => setConfirmacao({ titulo, texto, rotuloBotao, resolve })),
+    (titulo, texto, rotuloBotao = 'Excluir', perigoso = rotuloBotao === 'Excluir' || rotuloBotao.startsWith('Remover')) =>
+      new Promise((resolve) => setConfirmacao({ titulo, texto, rotuloBotao, perigoso, resolve })),
     [],
   );
 
@@ -45,7 +45,11 @@ export function UIProvider({ children }) {
             <button className="botao botao-secundario" onClick={() => responder(false)}>
               Cancelar
             </button>
-            <button className="botao botao-perigo" onClick={() => responder(true)} autoFocus>
+            <button
+              className={`botao ${confirmacao.perigoso ? 'botao-perigo' : 'botao-primario'}`}
+              onClick={() => responder(true)}
+              autoFocus
+            >
               {confirmacao.rotuloBotao}
             </button>
           </div>

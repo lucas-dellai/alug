@@ -2,11 +2,11 @@
 import { useMemo, useState } from 'react';
 import { api } from '../api';
 import { Etiqueta, Vazio, useUI } from './UI';
-import { FormContrato, ModalReajuste } from './Formularios';
+import { FormContrato, ModalRegrasCobranca, ModalReajuste } from './Formularios';
 import { ModalPagamento } from './Pagamentos';
-import { STATUS_PAGAMENTO, analisarContratos, dataBR, moeda, semAcento } from '../utils';
+import { REGRAS_PADRAO, STATUS_PAGAMENTO, analisarContratos, dataBR, moeda, paraISO, semAcento } from '../utils';
 
-export default function Contratos({ contratos, inquilinos, pagamentos, recarregar, abrirInquilino, irPara, filtroInicial }) {
+export default function Contratos({ contratos, inquilinos, pagamentos, regras, recarregar, abrirInquilino, irPara, filtroInicial }) {
   const { avisar, confirmar } = useUI();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState(filtroInicial?.status || '');
@@ -14,9 +14,10 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
   const [formulario, setFormulario] = useState(null); // { contrato } ou {} para novo
   const [reajuste, setReajuste] = useState(null);
   const [pagando, setPagando] = useState(null);
+  const [editandoRegras, setEditandoRegras] = useState(false);
 
   // Contratos com os cálculos já feitos (situação, atraso, reajuste)
-  const lista = useMemo(() => analisarContratos(contratos, pagamentos), [contratos, pagamentos]);
+  const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
 
   const filtrados = lista.filter((c) => {
     const texto = semAcento(`${c.imovel} ${c.inquilinos?.nome}`);
@@ -26,6 +27,23 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
     if (filtroSituacao && filtroSituacao !== 'ativos' && c.situacao.tipo !== filtroSituacao) return false;
     return true;
   });
+
+  // UPDATE: renova o contrato por mais 1 ano
+  async function renovar(contrato) {
+    const ok = await confirmar(
+      'Renovar contrato por mais 1 ano?',
+      `O contrato de ${contrato.inquilinos?.nome} passa a vencer em ${dataBR(contrato.renovacao.novoFim)}. Depois, confira se é hora de aplicar o reajuste.`,
+      'Renovar',
+    );
+    if (!ok) return;
+    try {
+      await api.atualizar('contratos', contrato.id, { data_fim: paraISO(contrato.renovacao.novoFim) });
+      avisar(`Contrato renovado até ${dataBR(contrato.renovacao.novoFim)}.`);
+      recarregar();
+    } catch (erro) {
+      avisar(erro.message, 'erro');
+    }
+  }
 
   // DELETE
   async function excluir(contrato) {
@@ -59,10 +77,17 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
           <h1>Contratos</h1>
           <p className="texto-suave">Cadastre, edite, reajuste e exclua contratos de aluguel.</p>
         </div>
-        <button className="botao botao-primario" onClick={novoContrato}>
-          + Novo contrato
-        </button>
+        <div className="botoes">
+          <button className="botao botao-secundario" onClick={() => setEditandoRegras(true)} title="Regras de multa, juros e tolerância">
+            ⚙ Multa e juros
+          </button>
+          <button className="botao botao-primario" onClick={novoContrato}>
+            + Novo contrato
+          </button>
+        </div>
       </div>
+
+      <ResumoRegras regras={regras || REGRAS_PADRAO} aoEditar={() => setEditandoRegras(true)} />
 
       <section className="cartao">
         <div className="cartao-topo">
@@ -150,10 +175,26 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
                     </td>
                     <td data-rotulo="Vencimento">Todo dia {c.dia_vencimento}</td>
                     <td data-rotulo="Contrato">
+                      <strong className={`vence-em vence-${c.situacao.tipo}`}>
+                        {c.situacao.tipo === 'encerrado' ? 'Venceu em' : 'Vence em'} {dataBR(c.data_fim)}
+                      </strong>
                       <Etiqueta valor={c.situacao.tipo}>{c.situacao.texto}</Etiqueta>
-                      <span className="sub">
-                        {dataBR(c.data_inicio)} a {dataBR(c.data_fim)}
-                      </span>
+                      <span className="sub">Início em {dataBR(c.data_inicio)}</span>
+                      <button
+                        className="botao botao-pequeno botao-renovar"
+                        disabled={!c.renovacao.disponivel}
+                        onClick={() => renovar(c)}
+                        title={
+                          c.renovacao.disponivel
+                            ? `Renovar até ${dataBR(c.renovacao.novoFim)}`
+                            : `Disponível a partir de ${dataBR(c.renovacao.inicioJanela)}`
+                        }
+                      >
+                        ↻ Renovar +1 ano
+                      </button>
+                      {!c.renovacao.disponivel && (
+                        <span className="sub pequeno">Libera em {dataBR(c.renovacao.inicioJanela)}</span>
+                      )}
                     </td>
                     <td data-rotulo="Pagamento">
                       <Etiqueta valor={c.status_pagamento} />
@@ -197,9 +238,21 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
         <FormContrato
           contrato={formulario.contrato}
           inquilinos={inquilinos}
+          regras={regras}
           aoFechar={() => setFormulario(null)}
           aoSalvar={() => {
             setFormulario(null);
+            recarregar();
+          }}
+        />
+      )}
+
+      {editandoRegras && (
+        <ModalRegrasCobranca
+          regras={regras || REGRAS_PADRAO}
+          aoFechar={() => setEditandoRegras(false)}
+          aoSalvar={() => {
+            setEditandoRegras(false);
             recarregar();
           }}
         />
@@ -227,5 +280,23 @@ export default function Contratos({ contratos, inquilinos, pagamentos, recarrega
         />
       )}
     </div>
+  );
+}
+
+// Faixa com as regras de cobrança atuais
+function ResumoRegras({ regras, aoEditar }) {
+  const itens = [
+    regras.cobrar_multa ? `Multa padrão de ${Number(regras.multa_padrao)}%` : 'Sem multa',
+    regras.cobrar_juros ? `Juros padrão de ${Number(regras.juros_padrao)}% ao mês` : 'Sem juros',
+    Number(regras.dias_tolerancia) > 0 ? `${regras.dias_tolerancia} dia(s) de tolerância` : 'Sem tolerância',
+  ];
+  return (
+    <button className="faixa-regras" onClick={aoEditar} title="Alterar regras de cobrança">
+      <span className="faixa-regras-icone">⚙</span>
+      <span>
+        <strong>Regras de cobrança:</strong> {itens.join(' · ')}
+      </span>
+      <span className="faixa-regras-editar">Alterar</span>
+    </button>
   );
 }

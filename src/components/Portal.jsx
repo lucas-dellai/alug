@@ -16,6 +16,7 @@ export default function Portal({ perfil, setPerfil }) {
   const [contratos, setContratos] = useState([]);
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
+  const [regras, setRegras] = useState(undefined);
   const [carregando, setCarregando] = useState(true);
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
   const [abertaId, setAbertaId] = useState(null);
@@ -23,7 +24,13 @@ export default function Portal({ perfil, setPerfil }) {
 
   const recarregar = useCallback(async () => {
     try {
-      const [c, s, p] = await Promise.all([api.listar('contratos'), api.listar('solicitacoes'), api.listar('pagamentos')]);
+      const [c, s, p, r] = await Promise.all([
+        api.listar('contratos'),
+        api.listar('solicitacoes'),
+        api.listar('pagamentos'),
+        api.listar('configuracoes').catch(() => undefined),
+      ]);
+      setRegras(r);
       setContratos(c);
       setSolicitacoes(s);
       setPagamentos(p);
@@ -38,7 +45,7 @@ export default function Portal({ perfil, setPerfil }) {
     recarregar();
   }, [recarregar]);
 
-  const lista = useMemo(() => analisarContratos(contratos, pagamentos), [contratos, pagamentos]);
+  const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const anfitriao = perfil.anfitriao;
   const whatsapp = linkWhatsApp(anfitriao?.telefone);
 

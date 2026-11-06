@@ -4,6 +4,7 @@ import { api } from '../api';
 import { Campo, Modal, useUI } from './UI';
 import {
   GARANTIAS,
+  REGRAS_PADRAO,
   INDICES,
   PRIORIDADES,
   STATUS_SOLICITACAO,
@@ -130,7 +131,7 @@ export function FormInquilino({ inquilino, aoFechar, aoSalvar }) {
 
 // ---------------- CONTRATO ----------------
 
-export function FormContrato({ contrato, inquilinos, inquilinoFixo, aoFechar, aoSalvar }) {
+export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
   const { avisar } = useUI();
   const [salvando, setSalvando] = useState(false);
   const [v, alterar] = useFormulario({
@@ -142,8 +143,9 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, aoFechar, ao
     data_fim: contrato?.data_fim || '',
     tipo_garantia: contrato?.tipo_garantia || 'Nenhuma',
     indice_reajuste: contrato?.indice_reajuste || 'IGP-M',
-    multa_atraso: contrato?.multa_atraso ?? 2,
-    juros_mes: contrato?.juros_mes ?? 1,
+    // Contrato novo já vem com os percentuais das regras de cobrança
+    multa_atraso: contrato?.multa_atraso ?? (regras?.multa_padrao ?? 2),
+    juros_mes: contrato?.juros_mes ?? (regras?.juros_padrao ?? 1),
     observacoes: contrato?.observacoes || '',
   });
 
@@ -434,6 +436,109 @@ export function ModalReajuste({ contrato, aoFechar, aoSalvar }) {
           {salvando ? 'Aplicando…' : 'Aplicar reajuste'}
         </button>
       </div>
+    </Modal>
+  );
+}
+
+// ---------------- REGRAS DE COBRANÇA (engrenagem) ----------------
+
+export function ModalRegrasCobranca({ regras, aoFechar, aoSalvar }) {
+  const { avisar } = useUI();
+  const [v, setV] = useState({
+    cobrar_multa: regras.cobrar_multa ?? true,
+    multa_padrao: regras.multa_padrao ?? 2,
+    cobrar_juros: regras.cobrar_juros ?? true,
+    juros_padrao: regras.juros_padrao ?? 1,
+    dias_tolerancia: regras.dias_tolerancia ?? 0,
+  });
+  const [aplicarTodos, setAplicarTodos] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const muda = (campo) => (e) =>
+    setV((atual) => ({ ...atual, [campo]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+
+  // Exemplo com um aluguel de R$ 1.000,00 pago 10 dias atrasado
+  const diasExemplo = 10;
+  const cobra = diasExemplo > Number(v.dias_tolerancia || 0);
+  const multaEx = cobra && v.cobrar_multa ? (1000 * Number(v.multa_padrao || 0)) / 100 : 0;
+  const jurosEx = cobra && v.cobrar_juros ? 1000 * (Number(v.juros_padrao || 0) / 100) * (diasExemplo / 30) : 0;
+
+  async function salvar(e) {
+    e.preventDefault();
+    setSalvando(true);
+    try {
+      const resposta = await api.atualizarRegras({ ...v, aplicar_todos: aplicarTodos });
+      avisar(
+        aplicarTodos
+          ? `Regras salvas e aplicadas em ${resposta.contratosAtualizados} contrato(s).`
+          : 'Regras de cobrança salvas.',
+      );
+      aoSalvar(resposta);
+    } catch (erro) {
+      avisar(erro.message, 'erro');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <Modal titulo="Multa e juros" subtitulo="Regras de cobrança para pagamentos atrasados" aoFechar={aoFechar}>
+      <form onSubmit={salvar}>
+        <div className="regra">
+          <label className="interruptor">
+            <input type="checkbox" checked={v.cobrar_multa} onChange={muda('cobrar_multa')} />
+            <span className="interruptor-trilho" aria-hidden="true" />
+            <span>
+              <strong>Cobrar multa por atraso</strong>
+              <small>Valor fixo cobrado uma vez quando o aluguel atrasa.</small>
+            </span>
+          </label>
+          <Campo rotulo="Multa padrão (%)">
+            <input type="number" min="0" max="100" step="0.01" value={v.multa_padrao} onChange={muda('multa_padrao')} disabled={!v.cobrar_multa} />
+          </Campo>
+        </div>
+
+        <div className="regra">
+          <label className="interruptor">
+            <input type="checkbox" checked={v.cobrar_juros} onChange={muda('cobrar_juros')} />
+            <span className="interruptor-trilho" aria-hidden="true" />
+            <span>
+              <strong>Cobrar juros por atraso</strong>
+              <small>Percentual ao mês, proporcional aos dias de atraso.</small>
+            </span>
+          </label>
+          <Campo rotulo="Juros padrão (% ao mês)">
+            <input type="number" min="0" max="100" step="0.01" value={v.juros_padrao} onChange={muda('juros_padrao')} disabled={!v.cobrar_juros} />
+          </Campo>
+        </div>
+
+        <div className="regra regra-simples">
+          <Campo rotulo="Dias de tolerância" dica="Dias depois do vencimento sem cobrar multa nem juros.">
+            <input type="number" min="0" max="31" step="1" value={v.dias_tolerancia} onChange={muda('dias_tolerancia')} />
+          </Campo>
+        </div>
+
+        <div className="regra-exemplo">
+          <strong>Exemplo:</strong> aluguel de {moeda(1000)} pago {diasExemplo} dias atrasado →{' '}
+          multa {moeda(multaEx)} + juros {moeda(jurosEx)} = <strong>{moeda(1000 + multaEx + jurosEx)}</strong>
+        </div>
+
+        <label className="caixa-marcar">
+          <input type="checkbox" checked={aplicarTodos} onChange={(e) => setAplicarTodos(e.target.checked)} />
+          <span>
+            Aplicar estes percentuais a <strong>todos os contratos</strong> já cadastrados
+            <small>Sem marcar, os percentuais valem só para os contratos novos. Cada contrato também pode ter os seus, no botão Editar.</small>
+          </span>
+        </label>
+
+        <div className="modal-acoes">
+          <button type="button" className="botao botao-secundario" onClick={aoFechar}>
+            Cancelar
+          </button>
+          <button className="botao botao-primario" disabled={salvando}>
+            {salvando ? 'Salvando…' : 'Salvar regras'}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 }
