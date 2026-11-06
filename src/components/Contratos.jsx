@@ -4,7 +4,7 @@ import { api } from '../api';
 import { Etiqueta, Vazio, useUI } from './UI';
 import { FormContrato, ModalRegrasCobranca, ModalReajuste } from './Formularios';
 import { ModalPagamento } from './Pagamentos';
-import { REGRAS_PADRAO, STATUS_PAGAMENTO, analisarContratos, dataBR, moeda, paraISO, semAcento } from '../utils';
+import { STATUS_PAGAMENTO, analisarContratos, dataBR, moeda, paraISO, semAcento } from '../utils';
 
 export default function Contratos({ contratos, inquilinos, pagamentos, regras, recarregar, abrirInquilino, irPara, filtroInicial }) {
   const { avisar, confirmar } = useUI();
@@ -78,16 +78,12 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
           <p className="texto-suave">Cadastre, edite, reajuste e exclua contratos de aluguel.</p>
         </div>
         <div className="botoes">
-          <button className="botao botao-secundario" onClick={() => setEditandoRegras(true)} title="Regras de multa, juros e tolerância">
-            ⚙ Multa e juros
-          </button>
+          <BotaoEngrenagem aoClicar={() => setEditandoRegras(true)} />
           <button className="botao botao-primario" onClick={novoContrato}>
             + Novo contrato
           </button>
         </div>
       </div>
-
-      <ResumoRegras regras={regras || REGRAS_PADRAO} aoEditar={() => setEditandoRegras(true)} />
 
       <section className="cartao">
         <div className="cartao-topo">
@@ -153,7 +149,7 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
                   <th>Aluguel</th>
                   <th>Vencimento</th>
                   <th>Contrato</th>
-                  <th>Pagamento</th>
+                  <th>Pagamento do mês</th>
                   <th aria-label="Ações" />
                 </tr>
               </thead>
@@ -196,8 +192,15 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
                         <span className="sub pequeno">Libera em {dataBR(c.renovacao.inicioJanela)}</span>
                       )}
                     </td>
-                    <td data-rotulo="Pagamento">
-                      <Etiqueta valor={c.status_pagamento} />
+                    <td data-rotulo="Pagamento do mês">
+                      <span className="pagamento-mes">
+                        <Etiqueta valor={c.status_pagamento} />
+                        {c.parcela && (
+                          <span className="parcela" title={`Parcela ${c.parcela.numero} de ${c.parcela.total} (${c.parcela.mes})`}>
+                            {c.parcela.texto}
+                          </span>
+                        )}
+                      </span>
                       {c.atraso && (
                         <span className="sub atraso" title={`Aluguel ${moeda(c.atraso.valor)} + multa ${moeda(c.atraso.multa)} + juros ${moeda(c.atraso.juros)}`}>
                           {c.atraso.quantidade > 1 ? `${c.atraso.quantidade} meses` : `${c.atraso.dias} dia(s)`} · cobrar{' '}
@@ -249,7 +252,7 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
 
       {editandoRegras && (
         <ModalRegrasCobranca
-          regras={regras || REGRAS_PADRAO}
+          regras={regras}
           aoFechar={() => setEditandoRegras(false)}
           aoSalvar={() => {
             setEditandoRegras(false);
@@ -283,20 +286,14 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
   );
 }
 
-// Faixa com as regras de cobrança atuais
-function ResumoRegras({ regras, aoEditar }) {
-  const itens = [
-    regras.cobrar_multa ? `Multa padrão de ${Number(regras.multa_padrao)}%` : 'Sem multa',
-    regras.cobrar_juros ? `Juros padrão de ${Number(regras.juros_padrao)}% ao mês` : 'Sem juros',
-    Number(regras.dias_tolerancia) > 0 ? `${regras.dias_tolerancia} dia(s) de tolerância` : 'Sem tolerância',
-  ];
+// Engrenagem discreta que abre as configurações
+export function BotaoEngrenagem({ aoClicar }) {
   return (
-    <button className="faixa-regras" onClick={aoEditar} title="Alterar regras de cobrança">
-      <span className="faixa-regras-icone">⚙</span>
-      <span>
-        <strong>Regras de cobrança:</strong> {itens.join(' · ')}
-      </span>
-      <span className="faixa-regras-editar">Alterar</span>
+    <button className="botao-engrenagem" onClick={aoClicar} title="Configurações" aria-label="Configurações">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+      </svg>
     </button>
   );
 }

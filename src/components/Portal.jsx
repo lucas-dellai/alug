@@ -88,7 +88,10 @@ export default function Portal({ perfil, setPerfil }) {
               <div key={c.id} className="portal-grade">
                 {/* Pagamento */}
                 <section className={`cartao portal-pagamento pagamento-${c.status_pagamento === 'Em dia' ? 'ok' : c.status_pagamento === 'Atrasado' ? 'atrasado' : 'pendente'}`}>
-                  <span className="texto-suave">Seu aluguel</span>
+                  <span className="texto-suave">
+                    Pagamento do mês
+                    {c.parcela && <em className="parcela" title={`Parcela ${c.parcela.numero} de ${c.parcela.total}`}>{c.parcela.texto}</em>}
+                  </span>
                   {c.atraso ? (
                     <>
                       <strong className="portal-valor">{moeda(c.atraso.total)}</strong>

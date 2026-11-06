@@ -134,15 +134,15 @@ export function FormInquilino({ inquilino, aoFechar, aoSalvar }) {
 export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
   const { avisar } = useUI();
   const [salvando, setSalvando] = useState(false);
-  const [v, alterar] = useFormulario({
+  const [v, alterar, setV] = useFormulario({
     inquilino_id: contrato?.inquilino_id ?? inquilinoFixo ?? '',
     imovel: contrato?.imovel || '',
     valor_aluguel: contrato?.valor_aluguel ?? '',
-    dia_vencimento: contrato?.dia_vencimento ?? 10,
+    dia_vencimento: contrato?.dia_vencimento ?? (regras?.dia_vencimento_padrao ?? 10),
     data_inicio: contrato?.data_inicio || '',
     data_fim: contrato?.data_fim || '',
     tipo_garantia: contrato?.tipo_garantia || 'Nenhuma',
-    indice_reajuste: contrato?.indice_reajuste || 'IGP-M',
+    indice_reajuste: contrato?.indice_reajuste || regras?.indice_padrao || 'IGP-M',
     // Contrato novo já vem com os percentuais das regras de cobrança
     multa_atraso: contrato?.multa_atraso ?? (regras?.multa_padrao ?? 2),
     juros_mes: contrato?.juros_mes ?? (regras?.juros_padrao ?? 1),
@@ -157,7 +157,7 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REG
     salvarRegistro({
       recurso: 'contratos',
       id: contrato?.id,
-      dados: { ...v, inquilino_id: Number(v.inquilino_id), dia_vencimento: Number(v.dia_vencimento) },
+      dados: (({ fimAutomatico, ...resto }) => ({ ...resto, inquilino_id: Number(resto.inquilino_id), dia_vencimento: Number(resto.dia_vencimento) }))(v),
       avisar,
       aoSalvar,
       setSalvando,
@@ -201,10 +201,33 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REG
             <input type="number" min="1" max="31" value={v.dia_vencimento} onChange={alterar('dia_vencimento')} required />
           </Campo>
           <Campo rotulo="Início do contrato" obrigatorio>
-            <input type="date" value={v.data_inicio} onChange={alterar('data_inicio')} required />
+            <input
+              type="date"
+              value={v.data_inicio}
+              onChange={(e) => {
+                const inicio = e.target.value;
+                // Contrato novo: o fim já é preenchido com a duração padrão das configurações
+                setV((atual) => {
+                  const novo = { ...atual, data_inicio: inicio };
+                  if (!contrato && inicio && (!atual.data_fim || atual.fimAutomatico)) {
+                    const [a, m, d] = inicio.split('-').map(Number);
+                    novo.data_fim = paraISO(new Date(a, m - 1 + Number(regras?.duracao_meses ?? 12), d));
+                    novo.fimAutomatico = true;
+                  }
+                  return novo;
+                });
+              }}
+              required
+            />
           </Campo>
           <Campo rotulo="Fim do contrato" obrigatorio>
-            <input type="date" value={v.data_fim} onChange={alterar('data_fim')} min={v.data_inicio || undefined} required />
+            <input
+              type="date"
+              value={v.data_fim}
+              onChange={(e) => setV((atual) => ({ ...atual, data_fim: e.target.value, fimAutomatico: false }))}
+              min={v.data_inicio || undefined}
+              required
+            />
           </Campo>
           <Campo rotulo="Índice de reajuste">
             <select value={v.indice_reajuste} onChange={alterar('indice_reajuste')}>
@@ -440,16 +463,21 @@ export function ModalReajuste({ contrato, aoFechar, aoSalvar }) {
   );
 }
 
-// ---------------- REGRAS DE COBRANÇA (engrenagem) ----------------
+// ---------------- CONFIGURAÇÕES (engrenagem) ----------------
 
 export function ModalRegrasCobranca({ regras, aoFechar, aoSalvar }) {
   const { avisar } = useUI();
+  const r = { ...REGRAS_PADRAO, ...(regras || {}) };
   const [v, setV] = useState({
-    cobrar_multa: regras.cobrar_multa ?? true,
-    multa_padrao: regras.multa_padrao ?? 2,
-    cobrar_juros: regras.cobrar_juros ?? true,
-    juros_padrao: regras.juros_padrao ?? 1,
-    dias_tolerancia: regras.dias_tolerancia ?? 0,
+    cobrar_multa: r.cobrar_multa,
+    multa_padrao: r.multa_padrao,
+    cobrar_juros: r.cobrar_juros,
+    juros_padrao: r.juros_padrao,
+    dias_tolerancia: r.dias_tolerancia,
+    indice_padrao: r.indice_padrao,
+    duracao_meses: r.duracao_meses,
+    dia_vencimento_padrao: r.dia_vencimento_padrao,
+    aviso_vencimento_dias: r.aviso_vencimento_dias,
   });
   const [aplicarTodos, setAplicarTodos] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -469,8 +497,8 @@ export function ModalRegrasCobranca({ regras, aoFechar, aoSalvar }) {
       const resposta = await api.atualizarRegras({ ...v, aplicar_todos: aplicarTodos });
       avisar(
         aplicarTodos
-          ? `Regras salvas e aplicadas em ${resposta.contratosAtualizados} contrato(s).`
-          : 'Regras de cobrança salvas.',
+          ? `Configurações salvas. Multa e juros aplicados em ${resposta.contratosAtualizados} contrato(s).`
+          : 'Configurações salvas.',
       );
       aoSalvar(resposta);
     } catch (erro) {
@@ -481,18 +509,19 @@ export function ModalRegrasCobranca({ regras, aoFechar, aoSalvar }) {
   }
 
   return (
-    <Modal titulo="Multa e juros" subtitulo="Regras de cobrança para pagamentos atrasados" aoFechar={aoFechar}>
+    <Modal titulo="Configurações" subtitulo="Cobrança, padrões dos contratos e avisos" aoFechar={aoFechar}>
       <form onSubmit={salvar}>
+        <h3 className="secao-formulario">Cobrança de atraso</h3>
         <div className="regra">
           <label className="interruptor">
             <input type="checkbox" checked={v.cobrar_multa} onChange={muda('cobrar_multa')} />
             <span className="interruptor-trilho" aria-hidden="true" />
             <span>
-              <strong>Cobrar multa por atraso</strong>
-              <small>Valor fixo cobrado uma vez quando o aluguel atrasa.</small>
+              <strong>Cobrar multa</strong>
+              <small>Cobrada uma vez quando o aluguel atrasa.</small>
             </span>
           </label>
-          <Campo rotulo="Multa padrão (%)">
+          <Campo rotulo="Multa (%)">
             <input type="number" min="0" max="100" step="0.01" value={v.multa_padrao} onChange={muda('multa_padrao')} disabled={!v.cobrar_multa} />
           </Campo>
         </div>
@@ -502,40 +531,76 @@ export function ModalRegrasCobranca({ regras, aoFechar, aoSalvar }) {
             <input type="checkbox" checked={v.cobrar_juros} onChange={muda('cobrar_juros')} />
             <span className="interruptor-trilho" aria-hidden="true" />
             <span>
-              <strong>Cobrar juros por atraso</strong>
-              <small>Percentual ao mês, proporcional aos dias de atraso.</small>
+              <strong>Cobrar juros</strong>
+              <small>Por mês, proporcional aos dias de atraso.</small>
             </span>
           </label>
-          <Campo rotulo="Juros padrão (% ao mês)">
+          <Campo rotulo="Juros (% ao mês)">
             <input type="number" min="0" max="100" step="0.01" value={v.juros_padrao} onChange={muda('juros_padrao')} disabled={!v.cobrar_juros} />
           </Campo>
         </div>
 
-        <div className="regra regra-simples">
-          <Campo rotulo="Dias de tolerância" dica="Dias depois do vencimento sem cobrar multa nem juros.">
+        <div className="grade-formulario">
+          <Campo rotulo="Dias de tolerância" dica="Sem multa e juros nesses dias após o vencimento.">
             <input type="number" min="0" max="31" step="1" value={v.dias_tolerancia} onChange={muda('dias_tolerancia')} />
           </Campo>
         </div>
 
-        <div className="regra-exemplo">
-          <strong>Exemplo:</strong> aluguel de {moeda(1000)} pago {diasExemplo} dias atrasado →{' '}
-          multa {moeda(multaEx)} + juros {moeda(jurosEx)} = <strong>{moeda(1000 + multaEx + jurosEx)}</strong>
-        </div>
+        <p className="regra-exemplo">
+          <strong>Exemplo:</strong> aluguel de {moeda(1000)} pago {diasExemplo} dias atrasado: multa {moeda(multaEx)} + juros{' '}
+          {moeda(jurosEx)} = <strong>{moeda(1000 + multaEx + jurosEx)}</strong>
+        </p>
 
         <label className="caixa-marcar">
           <input type="checkbox" checked={aplicarTodos} onChange={(e) => setAplicarTodos(e.target.checked)} />
           <span>
-            Aplicar estes percentuais a <strong>todos os contratos</strong> já cadastrados
-            <small>Sem marcar, os percentuais valem só para os contratos novos. Cada contrato também pode ter os seus, no botão Editar.</small>
+            Usar essa multa e esses juros também nos <strong>contratos já cadastrados</strong>
+            <small>Sem marcar, valem só para os contratos novos.</small>
           </span>
         </label>
+
+        <h3 className="secao-formulario">Padrões para contratos novos</h3>
+        <div className="grade-formulario">
+          <Campo rotulo="Duração do contrato">
+            <select value={v.duracao_meses} onChange={muda('duracao_meses')}>
+              {[6, 12, 24, 30, 36].map((m) => (
+                <option key={m} value={m}>
+                  {m} meses
+                </option>
+              ))}
+            </select>
+          </Campo>
+          <Campo rotulo="Dia de vencimento">
+            <input type="number" min="1" max="31" value={v.dia_vencimento_padrao} onChange={muda('dia_vencimento_padrao')} />
+          </Campo>
+          <Campo rotulo="Índice de reajuste">
+            <select value={v.indice_padrao} onChange={muda('indice_padrao')}>
+              {INDICES.map((i) => (
+                <option key={i}>{i}</option>
+              ))}
+            </select>
+          </Campo>
+        </div>
+
+        <h3 className="secao-formulario">Avisos</h3>
+        <div className="grade-formulario">
+          <Campo rotulo="Avisar contrato vencendo com" dica="Dias de antecedência para o alerta aparecer no Início.">
+            <select value={v.aviso_vencimento_dias} onChange={muda('aviso_vencimento_dias')}>
+              {[15, 30, 45, 60, 90].map((d) => (
+                <option key={d} value={d}>
+                  {d} dias
+                </option>
+              ))}
+            </select>
+          </Campo>
+        </div>
 
         <div className="modal-acoes">
           <button type="button" className="botao botao-secundario" onClick={aoFechar}>
             Cancelar
           </button>
           <button className="botao botao-primario" disabled={salvando}>
-            {salvando ? 'Salvando…' : 'Salvar regras'}
+            {salvando ? 'Salvando…' : 'Salvar'}
           </button>
         </div>
       </form>

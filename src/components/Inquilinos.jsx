@@ -6,7 +6,16 @@ import { FormContrato, FormInquilino } from './Formularios';
 import Documentos from './Documentos';
 import AcessoPortal from './AcessoPortal';
 import DetalheSolicitacao from './DetalheSolicitacao';
-import { analisarContratos, dataBR, moeda, semAcento } from '../utils';
+import {
+  analisarContratos,
+  analisarSolicitacao,
+  dataBR,
+  estaEncerrada,
+  linkWhatsApp,
+  moeda,
+  primeiroNome,
+  semAcento,
+} from '../utils';
 import { HistoricoPagamentos, ModalPagamento } from './Pagamentos';
 
 export default function Inquilinos({ inquilinos, contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
@@ -194,6 +203,14 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         </div>
       </div>
 
+      <ResumoInquilino
+        inquilino={inquilino}
+        contratos={contratos}
+        solicitacoes={solicitacoes}
+        aoPagar={setPagando}
+        aoAbrirSolicitacao={setAbertaId}
+      />
+
       <div className="ficha-grade">
         <section className="cartao">
           <h2>Dados pessoais</h2>
@@ -333,5 +350,132 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         />
       )}
     </div>
+  );
+}
+
+// Resumo no topo da ficha: o que precisa de atenção com este inquilino, já com o botão para resolver.
+function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirSolicitacao }) {
+  const ativos = contratos.filter((c) => c.situacao.tipo !== 'encerrado');
+  const abertas = solicitacoes.filter((s) => !estaEncerrada(s));
+  const totalAtraso = contratos.reduce((s, c) => s + (c.atraso?.total || 0), 0);
+  const aluguel = ativos.reduce((s, c) => s + Number(c.valor_aluguel), 0);
+  const statusGeral = contratos.some((c) => c.status_pagamento === 'Atrasado')
+    ? 'Atrasado'
+    : ativos.some((c) => c.status_pagamento === 'Pendente')
+      ? 'Pendente'
+      : ativos.length
+        ? 'Em dia'
+        : null;
+  const proximoFim = ativos.map((c) => c.data_fim).sort()[0];
+  // Parcela do contrato principal (o que define a situação do pagamento)
+  const principal =
+    contratos.find((c) => c.status_pagamento === 'Atrasado') ||
+    ativos.find((c) => c.status_pagamento === 'Pendente') ||
+    ativos[0];
+  const parcela = principal?.parcela;
+
+  const pontos = [];
+  for (const c of contratos) {
+    if (c.atraso) {
+      const texto = `Olá, ${primeiroNome(inquilino.nome)}! Tudo bem? Consta em aberto o aluguel de ${c.imovel}: ${moeda(c.atraso.total)} (com multa e juros). Pode me confirmar o pagamento?`;
+      const whatsapp = linkWhatsApp(inquilino.telefone);
+      pontos.push({
+        cor: 'vermelho',
+        titulo: `Aluguel atrasado há ${c.atraso.dias} dia(s)${c.parcela ? ` · parcela ${c.parcela.texto}` : ''}`,
+        texto: `${c.imovel} · ${c.atraso.quantidade} mês(es) em aberto · cobrar ${moeda(c.atraso.total)} (aluguel ${moeda(c.atraso.valor)} + multa ${moeda(c.atraso.multa)} + juros ${moeda(c.atraso.juros)})`,
+        acoes: (
+          <>
+            <button className="botao botao-pequeno botao-primario" onClick={() => aoPagar(c)}>
+              Registrar pagamento
+            </button>
+            {whatsapp && (
+              <a className="botao botao-pequeno botao-secundario" href={`${whatsapp}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noreferrer">
+                Cobrar no WhatsApp
+              </a>
+            )}
+          </>
+        ),
+      });
+    } else if (c.status_pagamento === 'Pendente' && c.situacao.tipo !== 'encerrado') {
+      pontos.push({
+        cor: 'amarelo',
+        titulo: c.vencimento.dias > 0 ? 'Aluguel do mês ainda não pago' : 'Pagamento do mês pendente',
+        texto: `${c.imovel} · ${moeda(c.valor_aluguel)} · ${c.vencimento.dias > 0 ? `vence em ${dataBR(c.vencimento.data)} (faltam ${c.vencimento.dias} dia(s))` : `venceu em ${dataBR(c.vencimento.data)}, ainda na tolerância`}`,
+        acoes: (
+          <button className="botao botao-pequeno botao-primario" onClick={() => aoPagar(c)}>
+            Registrar pagamento
+          </button>
+        ),
+      });
+    }
+    if (c.situacao.tipo === 'encerrado' && !c.atraso) {
+      pontos.push({ cor: 'vermelho', titulo: 'Contrato vencido', texto: `${c.imovel} · terminou em ${dataBR(c.data_fim)}. Renove na aba Contratos.` });
+    } else if (c.situacao.tipo === 'vencendo') {
+      pontos.push({ cor: 'amarelo', titulo: `Contrato ${c.situacao.texto.toLowerCase()}`, texto: `${c.imovel} · termina em ${dataBR(c.data_fim)}. ${c.renovacao?.disponivel ? 'A renovação já está liberada na aba Contratos.' : `A renovação libera em ${dataBR(c.renovacao?.inicioJanela)}.`}` });
+    }
+    if (c.reajuste?.disponivel && c.situacao.tipo !== 'encerrado') {
+      pontos.push({ cor: 'azul', titulo: 'Reajuste disponível', texto: `${c.imovel} · ${c.indice_reajuste} · aplique na aba Contratos.` });
+    }
+  }
+  for (const s of abertas) {
+    const analise = analisarSolicitacao(s);
+    if (!analise.alertas.length) continue;
+    const grave = analise.alertas.some((a) => a.tipo === 'vencido' || a.tipo === 'alta');
+    pontos.push({
+      cor: grave ? 'vermelho' : 'amarelo',
+      titulo: `Solicitação: ${s.titulo}`,
+      texto: `${s.status} · ${analise.alertas.map((a) => a.texto).join(' · ')}`,
+      acoes: (
+        <button className="botao botao-pequeno botao-secundario" onClick={() => aoAbrirSolicitacao(s.id)}>
+          Abrir
+        </button>
+      ),
+    });
+  }
+
+  return (
+    <section className="resumo-inquilino">
+      <div className="resumo-inquilino-numeros">
+        <div className={`mini-resumo ${statusGeral === 'Atrasado' ? 'mini-vermelho' : statusGeral === 'Pendente' ? 'mini-amarelo' : ''}`}>
+          <span>
+            Pagamento do mês
+            {parcela && <em className="parcela" title={`Parcela ${parcela.numero} de ${parcela.total} (${parcela.mes})`}>{parcela.texto}</em>}
+          </span>
+          <strong>{statusGeral === 'Atrasado' ? `Atrasado · ${moeda(totalAtraso)}` : statusGeral || 'Sem contrato'}</strong>
+        </div>
+        <div className="mini-resumo">
+          <span>Aluguel</span>
+          <strong>{ativos.length ? moeda(aluguel) : '—'}</strong>
+        </div>
+        <div className="mini-resumo">
+          <span>Contrato vence em</span>
+          <strong>{proximoFim ? dataBR(proximoFim) : '—'}</strong>
+        </div>
+        <div className={`mini-resumo ${abertas.length ? 'mini-azul' : ''}`}>
+          <span>Solicitações abertas</span>
+          <strong>{abertas.length}</strong>
+        </div>
+      </div>
+
+      {pontos.length ? (
+        <ul className="pontos-inquilino">
+          {pontos.map((p, i) => (
+            <li key={i} className={`alerta alerta-${p.cor}`}>
+              <div>
+                <strong>{p.titulo}</strong>
+                <span>{p.texto}</span>
+              </div>
+              {p.acoes && <div className="alerta-acoes">{p.acoes}</div>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        contratos.length > 0 && (
+          <p className="alerta alerta-verde">
+            <strong>✓ Tudo em dia com {primeiroNome(inquilino.nome)}</strong>
+          </p>
+        )
+      )}
+    </section>
   );
 }
