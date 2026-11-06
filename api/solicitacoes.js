@@ -26,4 +26,10 @@ export default criarCrud({
       throw new ErroApi(400, 'Status da solicitação inválido.');
     }
   },
+
+  // Antes de excluir, apaga os arquivos anexados
+  async antesDeExcluir(supabase, id) {
+    const { data } = await supabase.from('anexos_solicitacao').select('caminho').eq('solicitacao_id', id);
+    if (data?.length) await supabase.storage.from('anexos').remove(data.map((a) => a.caminho));
+  },
 });
