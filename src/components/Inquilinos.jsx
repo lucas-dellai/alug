@@ -5,6 +5,7 @@ import { Etiqueta, Vazio, useUI } from './UI';
 import { FormContrato, FormInquilino } from './Formularios';
 import Documentos from './Documentos';
 import AcessoPortal from './AcessoPortal';
+import DetalheSolicitacao from './DetalheSolicitacao';
 import { analisarContratos, dataBR, moeda, semAcento } from '../utils';
 import { HistoricoPagamentos, ModalPagamento } from './Pagamentos';
 
@@ -132,6 +133,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, recarr
   const [editando, setEditando] = useState(false);
   const [novoContrato, setNovoContrato] = useState(false);
   const [pagando, setPagando] = useState(null);
+  const [abertaId, setAbertaId] = useState(null);
 
   // DELETE
   async function excluir() {
@@ -269,9 +271,9 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, recarr
         {!solicitacoes.length ? (
           <p className="texto-suave">Nenhuma solicitação registrada.</p>
         ) : (
-          <ul className="lista-simples">
+          <ul className="lista-simples lista-clicavel">
             {solicitacoes.map((s) => (
-              <li key={s.id}>
+              <li key={s.id} onClick={() => setAbertaId(s.id)} role="button" tabIndex={0} title="Abrir solicitação">
                 <div>
                   <strong>{s.titulo}</strong>
                   <span className="sub">
@@ -287,6 +289,15 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, recarr
           </ul>
         )}
       </section>
+
+      {abertaId && solicitacoes.find((s) => s.id === abertaId) && (
+        <DetalheSolicitacao
+          solicitacao={solicitacoes.find((s) => s.id === abertaId)}
+          contratos={contratos}
+          aoFechar={() => setAbertaId(null)}
+          aoAtualizar={recarregar}
+        />
+      )}
 
       {editando && (
         <FormInquilino

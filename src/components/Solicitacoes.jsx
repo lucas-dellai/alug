@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { api } from '../api';
 import { Etiqueta, Vazio, useUI } from './UI';
 import { FormSolicitacao } from './Formularios';
+import DetalheSolicitacao from './DetalheSolicitacao';
 import { PRIORIDADES, STATUS_SOLICITACAO, analisarSolicitacao, dataBR } from '../utils';
 
 const ORDEM_PRIORIDADE = { Alta: 0, Média: 1, Baixa: 2 };
 
 export default function Solicitacoes({ solicitacoes, contratos, recarregar, abrirInquilino }) {
-  const { avisar, confirmar } = useUI();
+  const { avisar } = useUI();
   const [formulario, setFormulario] = useState(null);
+  const [abertaId, setAbertaId] = useState(null);
   const [filtroPrioridade, setFiltroPrioridade] = useState('');
   const [arrastando, setArrastando] = useState(null);
   const [colunaAlvo, setColunaAlvo] = useState(null);
@@ -28,19 +30,6 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
       avisar(erro.message, 'erro');
     } finally {
       setMovendo(null);
-    }
-  }
-
-  // DELETE
-  async function excluir(solicitacao) {
-    const ok = await confirmar('Excluir solicitação?', `"${solicitacao.titulo}" será apagada definitivamente.`);
-    if (!ok) return;
-    try {
-      await api.excluir('solicitacoes', solicitacao.id);
-      avisar('Solicitação excluída.');
-      recarregar();
-    } catch (erro) {
-      avisar(erro.message, 'erro');
     }
   }
 
@@ -118,6 +107,11 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                         draggable
                         onDragStart={() => setArrastando(s)}
                         onDragEnd={() => setArrastando(null)}
+                        onClick={() => setAbertaId(s.id)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === 'Enter' && setAbertaId(s.id)}
+                        title="Abrir solicitação"
                       >
                         <div className="etiquetas">
                           <Etiqueta valor={s.prioridade}>{s.prioridade}</Etiqueta>
@@ -125,10 +119,9 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                         </div>
                         <h3>{s.titulo}</h3>
                         {s.descricao && <p className="descricao">{s.descricao}</p>}
-                        <button className="link sub" onClick={() => abrirInquilino(s.contratos?.inquilino_id)}>
-                          {s.contratos?.inquilinos?.nome}
-                        </button>
-                        <span className="sub">{s.contratos?.imovel}</span>
+                        <span className="sub">
+                          {s.contratos?.inquilinos?.nome} · {s.contratos?.imovel}
+                        </span>
                         <span className="sub">
                           Aberta em {dataBR(s.data_abertura)}
                           {s.prazo && status !== 'Concluída' ? ` · prazo ${dataBR(s.prazo)}` : ''}
@@ -141,7 +134,7 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                             </span>
                           ))}
 
-                        <div className="cartao-kanban-acoes">
+                        <div className="cartao-kanban-acoes" onClick={(e) => e.stopPropagation()}>
                           <div className="setas">
                             <button
                               className="botao-icone"
@@ -162,14 +155,9 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                               →
                             </button>
                           </div>
-                          <div className="botoes">
-                            <button className="botao botao-pequeno botao-secundario" onClick={() => setFormulario({ solicitacao: s })}>
-                              Editar
-                            </button>
-                            <button className="botao botao-pequeno botao-perigo-leve" onClick={() => excluir(s)}>
-                              Excluir
-                            </button>
-                          </div>
+                          <button className="botao botao-pequeno botao-secundario" onClick={() => setAbertaId(s.id)}>
+                            Abrir
+                          </button>
                         </div>
                       </article>
                     );
@@ -187,10 +175,21 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
           solicitacao={formulario.solicitacao}
           contratos={contratos}
           aoFechar={() => setFormulario(null)}
-          aoSalvar={() => {
+          aoSalvar={(nova) => {
             setFormulario(null);
             recarregar();
+            if (nova?.id) setAbertaId(nova.id);
           }}
+        />
+      )}
+
+      {abertaId && solicitacoes.find((s) => s.id === abertaId) && (
+        <DetalheSolicitacao
+          solicitacao={solicitacoes.find((s) => s.id === abertaId)}
+          contratos={contratos}
+          aoFechar={() => setAbertaId(null)}
+          aoAtualizar={recarregar}
+          abrirInquilino={abrirInquilino}
         />
       )}
     </div>

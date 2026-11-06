@@ -6,6 +6,7 @@ import { APP } from '../config';
 import { Carregando, Etiqueta, Vazio, useUI } from './UI';
 import { Avatar, MenuUsuario, ModalPerfil } from './Perfil';
 import { FormSolicitacao } from './Formularios';
+import DetalheSolicitacao from './DetalheSolicitacao';
 import Documentos from './Documentos';
 import { HistoricoPagamentos } from './Pagamentos';
 import { analisarContratos, dataBR, linkWhatsApp, moeda, primeiroNome, saudacao, dataPorExtenso } from '../utils';
@@ -17,6 +18,7 @@ export default function Portal({ perfil, setPerfil }) {
   const [pagamentos, setPagamentos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
+  const [abertaId, setAbertaId] = useState(null);
   const [editandoPerfil, setEditandoPerfil] = useState(false);
 
   const recarregar = useCallback(async () => {
@@ -178,9 +180,9 @@ export default function Portal({ perfil, setPerfil }) {
                     Precisa de um conserto ou quer pedir algo? Abra uma solicitação e acompanhe por aqui.
                   </p>
                 ) : (
-                  <ul className="lista-simples">
+                  <ul className="lista-simples lista-clicavel">
                     {solicitacoes.map((s) => (
-                      <li key={s.id}>
+                      <li key={s.id} onClick={() => setAbertaId(s.id)} role="button" tabIndex={0} title="Abrir solicitação">
                         <div>
                           <strong>{s.titulo}</strong>
                           <span className="sub">
@@ -188,7 +190,10 @@ export default function Portal({ perfil, setPerfil }) {
                             {s.prazo && s.status !== 'Concluída' ? ` · previsão ${dataBR(s.prazo)}` : ''}
                           </span>
                         </div>
-                        <Etiqueta valor={s.status} />
+                        <div className="etiquetas">
+                          <Etiqueta valor={s.status} />
+                          <span className="seta-direita">›</span>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -230,10 +235,20 @@ export default function Portal({ perfil, setPerfil }) {
           modoInquilino
           contratos={contratos}
           aoFechar={() => setNovaSolicitacao(false)}
-          aoSalvar={() => {
+          aoSalvar={(nova) => {
             setNovaSolicitacao(false);
             recarregar();
+            // Abre a solicitação para o inquilino poder anexar fotos
+            if (nova?.id) setAbertaId(nova.id);
           }}
+        />
+      )}
+      {abertaId && solicitacoes.find((s) => s.id === abertaId) && (
+        <DetalheSolicitacao
+          modoInquilino
+          solicitacao={solicitacoes.find((s) => s.id === abertaId)}
+          aoFechar={() => setAbertaId(null)}
+          aoAtualizar={recarregar}
         />
       )}
       {editandoPerfil && (
