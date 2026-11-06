@@ -2771,3 +2771,193 @@ input[type='month'] {
     overflow-wrap: anywhere;
   }
 }
+
+/* ================= Contratos: vencimento, renovação e regras de cobrança ================= */
+.vence-em {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.vence-vencendo {
+  color: var(--amarelo);
+}
+
+.vence-encerrado {
+  color: var(--vermelho);
+}
+
+.botao-renovar {
+  display: flex;
+  margin-top: 8px;
+  background: var(--primaria-clara);
+  color: var(--primaria);
+  border-color: #c6dfcd;
+}
+
+.botao-renovar:hover:not(:disabled) {
+  background: #d3e8d9;
+}
+
+.botao-renovar:disabled {
+  background: var(--branco);
+  color: var(--suave);
+  border-color: var(--borda);
+  opacity: 0.6;
+}
+
+.faixa-regras {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--tinta);
+  cursor: pointer;
+}
+
+.faixa-regras:hover {
+  border-color: var(--primaria);
+}
+
+.faixa-regras-icone {
+  font-size: 18px;
+  color: var(--primaria);
+}
+
+.faixa-regras-editar {
+  margin-left: auto;
+  color: var(--primaria);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.regra {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.regra .campo {
+  margin-bottom: 0;
+}
+
+.regra-simples {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.interruptor {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.interruptor input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.interruptor-trilho {
+  flex-shrink: 0;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #c9d1ce;
+  position: relative;
+  transition: background 0.15s;
+  margin-top: 2px;
+}
+
+.interruptor-trilho::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s;
+}
+
+.interruptor input:checked + .interruptor-trilho {
+  background: var(--primaria);
+}
+
+.interruptor input:checked + .interruptor-trilho::after {
+  transform: translateX(18px);
+}
+
+.interruptor input:focus-visible + .interruptor-trilho {
+  outline: 2px solid var(--primaria);
+  outline-offset: 2px;
+}
+
+.interruptor strong,
+.caixa-marcar small,
+.interruptor small {
+  display: block;
+}
+
+.interruptor small,
+.caixa-marcar small {
+  color: var(--suave);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.regra-exemplo {
+  margin: 16px 0;
+  background: var(--primaria-clara);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.caixa-marcar {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.caixa-marcar input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--primaria);
+}
+
+@media (max-width: 820px) {
+  .regra {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .faixa-regras {
+    flex-wrap: wrap;
+  }
+
+  .pagina-topo .botoes {
+    width: 100%;
+  }
+
+  .pagina-topo .botoes .botao {
+    flex: 1;
+  }
+}

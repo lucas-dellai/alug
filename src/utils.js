@@ -126,11 +126,17 @@ export function nomeMes(chaveOuData) {
 }
 
 // Multa + juros de UM mês em atraso
+// Regras de cobrança padrão (o anfitrião muda na engrenagem da tela de Contratos)
+export const REGRAS_PADRAO = { cobrar_multa: true, multa_padrao: 2, cobrar_juros: true, juros_padrao: 1, dias_tolerancia: 0 };
+
+// Multa + juros de UM mês em atraso, respeitando as regras de cobrança
 function encargos(contrato, vencimento, referencia) {
+  const regras = contrato.regras || REGRAS_PADRAO;
   const dias = Math.max(0, diasEntre(vencimento, referencia));
   const valor = Number(contrato.valor_aluguel);
-  const multa = dias > 0 ? arredondar((valor * Number(contrato.multa_atraso || 0)) / 100) : 0;
-  const juros = arredondar(valor * (Number(contrato.juros_mes || 0) / 100) * (dias / 30));
+  const cobra = dias > Number(regras.dias_tolerancia || 0); // dentro da tolerância não cobra nada
+  const multa = cobra && regras.cobrar_multa ? arredondar((valor * Number(contrato.multa_atraso || 0)) / 100) : 0;
+  const juros = cobra && regras.cobrar_juros ? arredondar(valor * (Number(contrato.juros_mes || 0) / 100) * (dias / 30)) : 0;
   return { dias, valor, multa, juros, total: arredondar(valor + multa + juros) };
 }
 
@@ -165,8 +171,12 @@ export function analisarPagamentos(contrato, pagamentos, referencia = hoje()) {
   }
   const proximo = vencimento <= fim ? vencimento : null;
 
-  const emAberto = vencidos.filter((v) => !pagos.has(chaveMes(v)) && diasEntre(v, referencia) > 0);
-  const venceHoje = vencidos.find((v) => diasEntre(v, referencia) === 0 && !pagos.has(chaveMes(v)));
+  const tolerancia = Number((contrato.regras || REGRAS_PADRAO).dias_tolerancia || 0);
+  // Atrasado só depois da tolerância. Dentro dela, o mês fica "Pendente".
+  const emAberto = vencidos.filter((v) => !pagos.has(chaveMes(v)) && diasEntre(v, referencia) > tolerancia);
+  const venceHoje = vencidos.find(
+    (v) => !pagos.has(chaveMes(v)) && diasEntre(v, referencia) >= 0 && diasEntre(v, referencia) <= tolerancia,
+  );
   const proximoEmBreve =
     proximo && !pagos.has(chaveMes(proximo)) && diasEntre(referencia, proximo) <= 5 ? proximo : null;
 
@@ -194,8 +204,9 @@ export function analisarPagamentos(contrato, pagamentos, referencia = hoje()) {
 
 // Calcula situação, pagamento e reajuste de cada contrato de uma vez.
 // Os campos "status_pagamento" e "atraso" passam a ser calculados pelos pagamentos registrados.
-export function analisarContratos(contratos, pagamentos = [], referencia = hoje()) {
-  return contratos.map((c) => {
+export function analisarContratos(contratos, pagamentos = [], regras = REGRAS_PADRAO, referencia = hoje()) {
+  return contratos.map((original) => {
+    const c = { ...original, regras: regras || REGRAS_PADRAO };
     const reajuste = infoReajuste(c, referencia);
     // Só vale reajustar se o contrato ainda estiver valendo na data do reajuste
     reajuste.disponivel = reajuste.disponivel && reajuste.proximo < lerData(c.data_fim);
@@ -208,8 +219,17 @@ export function analisarContratos(contratos, pagamentos = [], referencia = hoje(
       pagamento,
       reajuste,
       vencimento: proximoVencimento(c, referencia),
+      renovacao: infoRenovacao(c, referencia),
     };
   });
+}
+
+// Renovação: o botão só fica ativo no mês em que o contrato vence (ou se já venceu)
+export function infoRenovacao(contrato, referencia = hoje()) {
+  const fim = lerData(contrato.data_fim);
+  const inicioJanela = new Date(fim.getFullYear(), fim.getMonth(), 1);
+  const novoFim = new Date(fim.getFullYear() + 1, fim.getMonth(), fim.getDate());
+  return { fim, inicioJanela, novoFim, disponivel: referencia >= inicioJanela };
 }
 
 // Quantos dias cada status pode ficar parado antes de virar alerta

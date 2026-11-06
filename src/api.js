@@ -38,6 +38,9 @@ export const api = {
   excluir: (recurso, id) => requisicao('DELETE', `${recurso}?id=${id}`),
   indice: (nome) => requisicao('GET', `indices?indice=${encodeURIComponent(nome)}`),
 
+  // Regras de cobrança (multa, juros e tolerância)
+  atualizarRegras: (dados) => requisicao('PUT', 'configuracoes', dados),
+
   // Perfil de quem está logado
   perfil: () => requisicao('GET', 'perfil'),
   salvarPerfil: (dados) => requisicao('PUT', 'perfil', dados),

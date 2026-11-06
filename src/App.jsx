@@ -85,19 +85,20 @@ function Sistema({ perfil, setPerfil }) {
   const [inquilinoAberto, setInquilinoAberto] = useState(null);
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [filtroContratos, setFiltroContratos] = useState(null);
-  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [] });
+  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], regras: undefined });
   const [carregando, setCarregando] = useState(true);
 
   // Busca tudo na API (READ)
   const recarregar = useCallback(async () => {
     try {
-      const [inquilinos, contratos, solicitacoes, pagamentos] = await Promise.all([
+      const [inquilinos, contratos, solicitacoes, pagamentos, regras] = await Promise.all([
         api.listar('inquilinos'),
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
+        api.listar('configuracoes').catch(() => undefined),
       ]);
-      setDados({ inquilinos, contratos, solicitacoes, pagamentos });
+      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras });
     } catch (erro) {
       avisar(erro.message, 'erro');
     } finally {
