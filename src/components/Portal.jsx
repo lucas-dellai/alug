@@ -187,7 +187,7 @@ export default function Portal({ perfil, setPerfil }) {
                           <strong>{s.titulo}</strong>
                           <span className="sub">
                             {s.tipo} · aberta em {dataBR(s.data_abertura)}
-                            {s.prazo && s.status !== 'Concluída' ? ` · previsão ${dataBR(s.prazo)}` : ''}
+                            {s.prazo && !['Concluída', 'Recusada'].includes(s.status) ? ` · previsão ${dataBR(s.prazo)}` : ''}
                           </span>
                         </div>
                         <div className="etiquetas">

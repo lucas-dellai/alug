@@ -73,7 +73,8 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
       ) : (
         <div className="kanban">
           {STATUS_SOLICITACAO.map((status, indice) => {
-            const cartoes = visiveis.filter((s) => s.status === status);
+            // A coluna "Concluída" também mostra as recusadas
+            const cartoes = visiveis.filter((s) => s.status === status || (status === 'Concluída' && s.status === 'Recusada'));
             return (
               <section
                 key={status}
@@ -91,7 +92,7 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                 }}
               >
                 <header className="coluna-topo">
-                  <h2>{status}</h2>
+                  <h2>{status === 'Concluída' ? 'Concluída / Recusada' : status}</h2>
                   <span className="contador">{cartoes.length}</span>
                 </header>
 
@@ -114,6 +115,7 @@ export default function Solicitacoes({ solicitacoes, contratos, recarregar, abri
                         title="Abrir solicitação"
                       >
                         <div className="etiquetas">
+                          {s.status === 'Recusada' && <Etiqueta valor="Recusada" />}
                           <Etiqueta valor={s.prioridade}>{s.prioridade}</Etiqueta>
                           <Etiqueta cor="cinza">{s.tipo}</Etiqueta>
                         </div>

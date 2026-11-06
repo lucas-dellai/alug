@@ -6,7 +6,7 @@ import { api } from '../api';
 import { supabase } from '../supabaseClient';
 import { Campo, Carregando, Etiqueta, Modal, useUI } from './UI';
 import { FormSolicitacao } from './Formularios';
-import { PRIORIDADES, STATUS_SOLICITACAO, analisarSolicitacao, dataBR, semAcento } from '../utils';
+import { PRIORIDADES, STATUS_SOLICITACAO, analisarSolicitacao, dataBR, estaEncerrada, semAcento } from '../utils';
 
 const TIPOS_ACEITOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
@@ -26,8 +26,34 @@ export default function DetalheSolicitacao({
   const [atual, setAtual] = useState(solicitacao);
   const [editando, setEditando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [recusando, setRecusando] = useState(false);
+  const [versaoConversa, setVersaoConversa] = useState(0);
 
   useEffect(() => setAtual(solicitacao), [solicitacao]);
+
+  const encerrada = estaEncerrada(atual);
+  const etapa = STATUS_SOLICITACAO.indexOf(atual.status);
+  const anterior = etapa > 0 ? STATUS_SOLICITACAO[etapa - 1] : null;
+  const proxima = etapa >= 0 && etapa < STATUS_SOLICITACAO.length - 1 ? STATUS_SOLICITACAO[etapa + 1] : null;
+
+  // Muda o status e, se tiver, deixa uma mensagem na conversa para o inquilino
+  async function mudarStatus(status, mensagem) {
+    setSalvando(true);
+    try {
+      const novo = await api.atualizar('solicitacoes', atual.id, { status });
+      if (mensagem?.trim()) {
+        await api.criar('mensagens', { solicitacao_id: atual.id, texto: mensagem.trim() });
+        setVersaoConversa((v) => v + 1);
+      }
+      setAtual(novo);
+      avisar(`Solicitação ${status === 'Recusada' ? 'recusada' : status === 'Concluída' ? 'concluída' : `movida para ${status}`}.`);
+      aoAtualizar?.();
+    } catch (erro) {
+      avisar(erro.message, 'erro');
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   const analise = analisarSolicitacao(atual);
 
@@ -93,16 +119,39 @@ export default function DetalheSolicitacao({
         </div>
       )}
 
-      {/* Controles do anfitrião */}
+      {/* Ações rápidas do anfitrião */}
+      {!modoInquilino && (
+        <div className="detalhe-acoes">
+          {encerrada ? (
+            <button className="botao botao-secundario" onClick={() => mudarStatus('Aberta')} disabled={salvando}>
+              ↺ Reabrir solicitação
+            </button>
+          ) : (
+            <>
+              {proxima && proxima !== 'Concluída' && (
+                <button className="botao botao-primario" onClick={() => mudarStatus(proxima)} disabled={salvando}>
+                  Avançar para {proxima} →
+                </button>
+              )}
+              <button className="botao botao-sucesso" onClick={() => mudarStatus('Concluída')} disabled={salvando}>
+                ✓ Concluir
+              </button>
+              {anterior && (
+                <button className="botao botao-secundario" onClick={() => mudarStatus(anterior)} disabled={salvando}>
+                  ← Voltar para {anterior}
+                </button>
+              )}
+              <button className="botao botao-perigo-leve" onClick={() => setRecusando(true)} disabled={salvando}>
+                ✕ Recusar
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Ajustes do anfitrião */}
       {!modoInquilino && (
         <div className="detalhe-controles">
-          <Campo rotulo="Status">
-            <select value={atual.status} onChange={(e) => alterar('status', e.target.value)} disabled={salvando}>
-              {STATUS_SOLICITACAO.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </Campo>
           <Campo rotulo="Prioridade">
             <select value={atual.prioridade} onChange={(e) => alterar('prioridade', e.target.value)} disabled={salvando}>
               {PRIORIDADES.map((p) => (
@@ -122,7 +171,7 @@ export default function DetalheSolicitacao({
         </div>
       )}
 
-      {modoInquilino && atual.prazo && atual.status !== 'Concluída' && (
+      {modoInquilino && atual.prazo && !encerrada && (
         <p className="texto-suave">
           Previsão de solução: <strong>{dataBR(atual.prazo)}</strong>
         </p>
@@ -152,7 +201,18 @@ export default function DetalheSolicitacao({
 
       <Anexos solicitacaoId={atual.id} podeExcluir={!modoInquilino} />
 
-      <Conversa solicitacaoId={atual.id} modoInquilino={modoInquilino} />
+      <Conversa key={versaoConversa} solicitacaoId={atual.id} modoInquilino={modoInquilino} />
+
+      {recusando && (
+        <ModalRecusa
+          titulo={atual.titulo}
+          aoFechar={() => setRecusando(false)}
+          aoConfirmar={async (motivo) => {
+            setRecusando(false);
+            await mudarStatus('Recusada', motivo ? `Solicitação recusada. Motivo: ${motivo}` : '');
+          }}
+        />
+      )}
 
       {!modoInquilino && (
         <div className="modal-acoes detalhe-rodape">
@@ -316,8 +376,10 @@ function Conversa({ solicitacaoId, modoInquilino }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solicitacaoId]);
 
+  // Rola só a caixa da conversa até a última mensagem (sem mexer no resto da tela)
   useEffect(() => {
-    fim.current?.scrollIntoView({ block: 'nearest' });
+    const caixa = fim.current?.parentElement;
+    if (caixa) caixa.scrollTop = caixa.scrollHeight;
   }, [mensagens.length]);
 
   // CREATE
@@ -376,5 +438,25 @@ function Conversa({ solicitacaoId, modoInquilino }) {
         </button>
       </form>
     </section>
+  );
+}
+
+// Janela para recusar uma solicitação, com motivo opcional (vai para a conversa)
+function ModalRecusa({ titulo, aoFechar, aoConfirmar }) {
+  const [motivo, setMotivo] = useState('');
+  return (
+    <Modal titulo="Recusar solicitação?" subtitulo={titulo} aoFechar={aoFechar} pequeno>
+      <Campo rotulo="Motivo (opcional)" dica="O inquilino vai ver esta mensagem na conversa.">
+        <textarea rows="3" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: o conserto é responsabilidade do condomínio." autoFocus />
+      </Campo>
+      <div className="modal-acoes">
+        <button className="botao botao-secundario" onClick={aoFechar}>
+          Cancelar
+        </button>
+        <button className="botao botao-perigo" onClick={() => aoConfirmar(motivo)}>
+          Recusar solicitação
+        </button>
+      </div>
+    </Modal>
   );
 }

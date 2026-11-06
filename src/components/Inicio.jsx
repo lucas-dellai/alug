@@ -10,6 +10,7 @@ import {
   primeiroNome,
   saudacao,
   dataPorExtenso,
+  estaEncerrada,
 } from '../utils';
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
@@ -162,7 +163,7 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
         </button>
         <button className="resumo-cartao clicavel" onClick={() => irPara('solicitacoes')}>
           <span>Solicitações abertas</span>
-          <strong>{solicitacoes.filter((s) => s.status !== 'Concluída').length}</strong>
+          <strong>{solicitacoes.filter((s) => !estaEncerrada(s)).length}</strong>
           <small>Ver quadro</small>
         </button>
       </section>

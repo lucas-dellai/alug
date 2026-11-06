@@ -112,6 +112,7 @@ const CORES_STATUS = {
   'Em análise': 'amarelo',
   'Em andamento': 'roxo',
   Concluída: 'verde',
+  Recusada: 'vermelho',
   Alta: 'vermelho',
   Média: 'amarelo',
   Baixa: 'cinza',
