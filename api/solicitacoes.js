@@ -2,7 +2,7 @@
 import { criarCrud } from './_lib/crud.js';
 import { ErroApi, exigirCampos } from './_lib/supabase.js';
 
-const STATUS = ['Aberta', 'Em análise', 'Em andamento', 'Concluída'];
+const STATUS = ['Aberta', 'Em análise', 'Em andamento', 'Concluída', 'Recusada'];
 
 export default criarCrud({
   tabela: 'solicitacoes',
