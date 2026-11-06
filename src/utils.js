@@ -80,10 +80,10 @@ export function semAcento(texto) {
 // ---------- Regras de negócio ----------
 
 // Situação do contrato pela data de término
-export function situacaoContrato(contrato, referencia = hoje()) {
+export function situacaoContrato(contrato, referencia = hoje(), diasAviso = 30) {
   const dias = diasEntre(referencia, lerData(contrato.data_fim));
   if (dias < 0) return { tipo: 'encerrado', texto: 'Contrato vencido', dias };
-  if (dias <= 30) {
+  if (dias <= diasAviso) {
     return { tipo: 'vencendo', texto: dias === 0 ? 'Vence hoje' : `Vence em ${dias} dia${dias > 1 ? 's' : ''}`, dias };
   }
   return { tipo: 'ativo', texto: 'Ativo', dias };
@@ -127,7 +127,18 @@ export function nomeMes(chaveOuData) {
 
 // Multa + juros de UM mês em atraso
 // Regras de cobrança padrão (o anfitrião muda na engrenagem da tela de Contratos)
-export const REGRAS_PADRAO = { cobrar_multa: true, multa_padrao: 2, cobrar_juros: true, juros_padrao: 1, dias_tolerancia: 0 };
+export const REGRAS_PADRAO = {
+  cobrar_multa: true,
+  multa_padrao: 2,
+  cobrar_juros: true,
+  juros_padrao: 1,
+  dias_tolerancia: 0,
+  // Padrões para contratos novos e avisos
+  indice_padrao: 'IGP-M',
+  duracao_meses: 12,
+  dia_vencimento_padrao: 10,
+  aviso_vencimento_dias: 30,
+};
 
 // Multa + juros de UM mês em atraso, respeitando as regras de cobrança
 function encargos(contrato, vencimento, referencia) {
@@ -197,26 +208,40 @@ export function analisarPagamentos(contrato, pagamentos, referencia = hoje()) {
   }
 
   const status = atraso ? 'Atrasado' : venceHoje || proximoEmBreve ? 'Pendente' : 'Em dia';
+
+  // Parcela do contrato a que o status se refere (ex.: 8/12 = oitavo mês de 12)
+  const primeiro = vencidos[0] || proximo;
+  let ultimoVencimento = vencimentoNoMes(fim.getFullYear(), fim.getMonth(), dia);
+  if (ultimoVencimento > fim) ultimoVencimento = vencimentoNoMes(fim.getFullYear(), fim.getMonth() - 1, dia);
+  const difMeses = (a, b) => (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  let parcela = null;
+  const referenteA = (atraso && atraso.vencimento) || venceHoje || proximoEmBreve || vencidos[vencidos.length - 1] || proximo;
+  if (primeiro && referenteA) {
+    const total = Math.max(1, difMeses(primeiro, ultimoVencimento) + 1);
+    const numero = Math.min(total, Math.max(1, difMeses(primeiro, referenteA) + 1));
+    parcela = { numero, total, mes: nomeMes(referenteA), texto: `${numero}/${total}` };
+  }
   const ultimo = [...pagos.values()].sort((a, b) => (a.data_pagamento < b.data_pagamento ? 1 : -1))[0] || null;
 
-  return { status, atraso, vencidos, proximo, pagos, emAberto, ultimo };
+  return { status, atraso, vencidos, proximo, pagos, emAberto, ultimo, parcela };
 }
 
 // Calcula situação, pagamento e reajuste de cada contrato de uma vez.
 // Os campos "status_pagamento" e "atraso" passam a ser calculados pelos pagamentos registrados.
 export function analisarContratos(contratos, pagamentos = [], regras = REGRAS_PADRAO, referencia = hoje()) {
   return contratos.map((original) => {
-    const c = { ...original, regras: regras || REGRAS_PADRAO };
+    const c = { ...original, regras: { ...REGRAS_PADRAO, ...(regras || {}) } };
     const reajuste = infoReajuste(c, referencia);
     // Só vale reajustar se o contrato ainda estiver valendo na data do reajuste
     reajuste.disponivel = reajuste.disponivel && reajuste.proximo < lerData(c.data_fim);
     const pagamento = analisarPagamentos(c, pagamentos, referencia);
     return {
       ...c,
-      situacao: situacaoContrato(c, referencia),
+      situacao: situacaoContrato(c, referencia, Number(c.regras.aviso_vencimento_dias ?? 30)),
       status_pagamento: pagamento.status,
       atraso: pagamento.atraso,
       pagamento,
+      parcela: pagamento.parcela,
       reajuste,
       vencimento: proximoVencimento(c, referencia),
       renovacao: infoRenovacao(c, referencia),

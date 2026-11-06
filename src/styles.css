@@ -2961,3 +2961,165 @@ input[type='month'] {
     flex: 1;
   }
 }
+
+/* ================= Resumo no topo da ficha do inquilino ================= */
+.resumo-inquilino {
+  display: grid;
+  gap: 12px;
+}
+
+.resumo-inquilino-numeros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mini-resumo {
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+
+.mini-resumo span {
+  display: block;
+  font-size: 12px;
+  color: var(--suave);
+  margin-bottom: 4px;
+}
+
+.mini-resumo strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.mini-vermelho {
+  background: #fdecec;
+  border-color: #f3c2c2;
+}
+
+.mini-vermelho strong {
+  color: var(--vermelho);
+}
+
+.mini-amarelo {
+  background: #fdf5e2;
+  border-color: #f0dca8;
+}
+
+.mini-amarelo strong {
+  color: #9a6a00;
+}
+
+.mini-azul strong {
+  color: var(--azul);
+}
+
+.pontos-inquilino {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.pontos-inquilino .alerta {
+  flex-wrap: wrap;
+}
+
+.pontos-inquilino .alerta > div:first-child {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.alerta-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alerta-verde {
+  border-color: var(--primaria);
+  margin: 0;
+}
+
+.alerta-verde strong {
+  color: var(--primaria);
+}
+
+@media (max-width: 720px) {
+  .resumo-inquilino-numeros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.alerta-acoes a.botao-secundario {
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+/* ================= Engrenagem de configurações ================= */
+.botao-engrenagem {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--suave);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.3s;
+}
+
+.botao-engrenagem:hover {
+  background: var(--superficie);
+  border-color: var(--borda);
+  color: var(--primaria);
+  transform: rotate(45deg);
+}
+
+@media (max-width: 720px) {
+  .pagina-topo {
+    position: relative;
+  }
+
+  .pagina-topo .botao-engrenagem {
+    position: absolute;
+    top: 2px;
+    right: -6px;
+  }
+
+  .pagina-topo h1 {
+    padding-right: 40px;
+  }
+}
+
+/* Parcela do contrato (ex.: 8/12) */
+.pagamento-mes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.parcela {
+  display: inline-block;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--suave);
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pagamento-mes .parcela {
+  margin-left: 0;
+}
