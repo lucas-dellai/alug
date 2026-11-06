@@ -5,7 +5,10 @@ export const GARANTIAS = ['Nenhuma', 'Fiador', 'Caução', 'Seguro-fiança'];
 export const INDICES = ['IGP-M', 'IPCA', 'Livre'];
 export const TIPOS_SOLICITACAO = ['Manutenção', 'Reclamação', 'Pedido', 'Outro'];
 export const PRIORIDADES = ['Baixa', 'Média', 'Alta'];
+// Etapas do quadro (Kanban). "Recusada" fica junto com as concluídas, na última coluna.
 export const STATUS_SOLICITACAO = ['Aberta', 'Em análise', 'Em andamento', 'Concluída'];
+export const STATUS_FINAIS = ['Concluída', 'Recusada'];
+export const estaEncerrada = (s) => STATUS_FINAIS.includes(s.status);
 export const TIPOS_DOCUMENTO = [
   'RG',
   'CNH',
@@ -215,7 +218,7 @@ export const LIMITE_SEM_EVOLUCAO = { Aberta: 3, 'Em análise': 7, 'Em andamento'
 // Pontos de atenção de uma solicitação: prazo e tempo parada
 export function analisarSolicitacao(s, referencia = hoje()) {
   const resultado = { alertas: [], diasParada: 0, prazoDias: null };
-  if (s.status === 'Concluída') return resultado;
+  if (estaEncerrada(s)) return resultado;
 
   const desde = lerData(s.atualizado_em || s.data_abertura);
   resultado.diasParada = desde ? Math.max(0, diasEntre(desde, referencia)) : 0;

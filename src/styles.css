@@ -2655,3 +2655,119 @@ a.botao {
     align-items: center;
   }
 }
+
+/* ================= Ações rápidas e ajustes de celular na ficha ================= */
+.modal-fundo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  min-width: 0;
+}
+
+.modal-corpo {
+  overflow-x: hidden;
+}
+
+.modal-corpo input,
+.modal-corpo select,
+.modal-corpo textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input[type='date'],
+input[type='month'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 40px;
+}
+
+.detalhe-controles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detalhe-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.botao-sucesso {
+  background: var(--branco);
+  border-color: #9fd0b0;
+  color: var(--verde);
+}
+
+.botao-sucesso:hover:not(:disabled) {
+  background: var(--verde-fundo);
+}
+
+.sub .link {
+  font-size: inherit;
+}
+
+@media (max-width: 820px) {
+  /* A janela vira uma "folha" de tela cheia no celular */
+  .modal-fundo {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal,
+  .modal-largo,
+  .modal-pequeno {
+    max-width: 100%;
+    width: 100%;
+    max-height: 94vh;
+    max-height: 94dvh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .modal-topo {
+    padding: 16px 16px 0;
+  }
+
+  .modal-topo h2 {
+    font-size: 20px;
+  }
+
+  .modal-corpo {
+    padding: 14px 16px 24px;
+  }
+
+  .detalhe-controles {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 12px 0;
+  }
+
+  .detalhe-acoes .botao {
+    flex: 1 1 100%;
+    white-space: normal;
+  }
+
+  .detalhe-bloco .cartao-topo {
+    flex-wrap: wrap;
+  }
+
+  .detalhe-rodape {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .detalhe-rodape .espaco {
+    display: none;
+  }
+
+  .conversa-envio {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sub {
+    overflow-wrap: anywhere;
+  }
+}

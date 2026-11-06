@@ -123,7 +123,7 @@ function Sistema({ perfil, setPerfil }) {
     window.scrollTo(0, 0);
   }
 
-  const abertas = dados.solicitacoes.filter((s) => s.status !== 'Concluída').length;
+  const abertas = dados.solicitacoes.filter((s) => !['Concluída', 'Recusada'].includes(s.status)).length;
 
   const botoesAbas = (classe) =>
     ABAS.map((a) => (
