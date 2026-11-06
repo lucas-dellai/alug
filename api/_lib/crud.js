@@ -27,6 +27,7 @@ export function criarCrud({
   antesDeExcluir,
   inquilinoPode = [],
   prepararParaInquilino,
+  prepararCriacao,
 }) {
   return rota(async (req, res) => {
     const supabase = criarCliente(req);
@@ -59,6 +60,7 @@ export function criarCrud({
       case 'POST': {
         let dados = limparCampos(req.body, campos);
         if (ehInquilino && prepararParaInquilino) dados = prepararParaInquilino(dados);
+        if (prepararCriacao) dados = prepararCriacao(dados, perfil);
         if (validar) validar(dados, 'criar');
         const { data, error } = await supabase.from(tabela).insert(dados).select(selecionar).single();
         if (error) throw traduzirErroBanco(error);
