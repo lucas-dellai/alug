@@ -11,11 +11,13 @@ import {
   saudacao,
   dataPorExtenso,
   estaEncerrada,
+  mesAtual,
+  resumoDoMes,
 } from '../utils';
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
 
-export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, regras, recarregar, irPara, abrirInquilino }) {
+export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
   const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const ativos = lista.filter((c) => c.situacao.tipo !== 'encerrado');
@@ -99,6 +101,7 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
   }));
 
   const hoje = new Date();
+  const mes = resumoDoMes(mesAtual(hoje), { contratos, pagamentos, custos });
 
   return (
     <div className="pagina">
@@ -144,6 +147,17 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
           <span>Receita mensal</span>
           <strong>{moeda(receita)}</strong>
           <small>Soma dos aluguéis ativos</small>
+        </button>
+        <button
+          className={`resumo-cartao clicavel ${mes.resultado < 0 ? 'alerta-vermelho' : ''}`}
+          onClick={() => irPara('custos', { mes: mes.chave })}
+          title="Ver os custos do mês"
+        >
+          <span>Custos do mês</span>
+          <strong>{moeda(mes.totalCustos)}</strong>
+          <small>
+            Resultado: <b className={mes.resultado < 0 ? 'texto-vermelho' : 'texto-verde'}>{moeda(mes.resultado)}</b>
+          </small>
         </button>
         <button
           className={`resumo-cartao clicavel ${porStatus[2].quantidade ? 'alerta-vermelho' : ''}`}
@@ -243,6 +257,18 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
                 </li>
               ))}
             </ul>
+            <button className="mes-balanco" onClick={() => irPara('custos', { mes: mes.chave })} title="Ver os custos do mês">
+              <span>
+                Recebido <strong className="texto-verde">{moeda(mes.recebido)}</strong>
+              </span>
+              <span>
+                Custos <strong className="texto-vermelho">− {moeda(mes.totalCustos)}</strong>
+              </span>
+              <span>
+                Resultado <strong className={mes.resultado < 0 ? 'texto-vermelho' : ''}>{moeda(mes.resultado)}</strong>
+              </span>
+              <span className="seta-direita">›</span>
+            </button>
           </section>
 
           {/* Gráfico: receita por imóvel */}

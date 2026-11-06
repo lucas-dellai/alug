@@ -6,7 +6,8 @@ import { api } from '../api';
 import { supabase } from '../supabaseClient';
 import { Campo, Carregando, Etiqueta, Modal, useUI } from './UI';
 import { FormSolicitacao } from './Formularios';
-import { PRIORIDADES, STATUS_SOLICITACAO, analisarSolicitacao, dataBR, estaEncerrada, semAcento } from '../utils';
+import { FormCusto, ListaCustos } from './Custos';
+import { PRIORIDADES, STATUS_SOLICITACAO, analisarSolicitacao, dataBR, estaEncerrada, moeda, semAcento } from '../utils';
 
 const TIPOS_ACEITOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
@@ -201,6 +202,9 @@ export default function DetalheSolicitacao({
 
       <Anexos solicitacaoId={atual.id} podeExcluir={!modoInquilino} />
 
+      {/* Custos do chamado: só o anfitrião vê */}
+      {!modoInquilino && <CustosDoChamado solicitacao={atual} aoAtualizar={aoAtualizar} />}
+
       <Conversa key={versaoConversa} solicitacaoId={atual.id} modoInquilino={modoInquilino} />
 
       {recusando && (
@@ -226,6 +230,67 @@ export default function DetalheSolicitacao({
         </div>
       )}
     </Modal>
+  );
+}
+
+// ---------- Custos do chamado ----------
+function CustosDoChamado({ solicitacao, aoAtualizar }) {
+  const { avisar } = useUI();
+  const [custos, setCustos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [formulario, setFormulario] = useState(null);
+
+  async function carregar() {
+    try {
+      setCustos(await api.listar('custos', { solicitacao_id: solicitacao.id }));
+    } catch (erro) {
+      avisar(erro.message, 'erro');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solicitacao.id]);
+
+  function depoisDeMudar() {
+    carregar();
+    aoAtualizar?.();
+  }
+
+  const total = custos.reduce((s, c) => s + Number(c.valor), 0);
+
+  return (
+    <section className="detalhe-bloco">
+      <div className="cartao-topo">
+        <h3 className="subtitulo-secao">
+          Custos {custos.length > 0 && <span className="texto-suave">· total {moeda(total)}</span>}
+        </h3>
+        <button className="botao botao-pequeno botao-secundario" onClick={() => setFormulario({})}>
+          + Lançar custo
+        </button>
+      </div>
+      {carregando ? (
+        <Carregando />
+      ) : !custos.length ? (
+        <p className="texto-suave pequeno">Nenhum custo neste chamado. Lance aqui o que gastou para resolver (com a nota).</p>
+      ) : (
+        <ListaCustos custos={custos} dentroDoChamado aoEditar={(custo) => setFormulario({ custo })} recarregar={depoisDeMudar} />
+      )}
+      {formulario && (
+        <FormCusto
+          custo={formulario.custo}
+          fixo={{ solicitacao_id: solicitacao.id, contrato_id: solicitacao.contrato_id }}
+          aoFechar={() => setFormulario(null)}
+          aoSalvar={() => {
+            setFormulario(null);
+            depoisDeMudar();
+          }}
+        />
+      )}
+    </section>
   );
 }
 
