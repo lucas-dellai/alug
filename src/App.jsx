@@ -8,6 +8,7 @@ import Inicio from './components/Inicio';
 import Contratos from './components/Contratos';
 import Inquilinos from './components/Inquilinos';
 import Solicitacoes from './components/Solicitacoes';
+import Custos from './components/Custos';
 import Portal from './components/Portal';
 import { MenuUsuario, ModalPerfil } from './components/Perfil';
 
@@ -69,6 +70,7 @@ const ABAS = [
   { id: 'contratos', rotulo: 'Contratos', icone: 'M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 1v5h5M9 13h7M9 17h5' },
   { id: 'inquilinos', rotulo: 'Inquilinos', icone: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 10a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6' },
   { id: 'solicitacoes', rotulo: 'Solicitações', icone: 'M4 4h5v16H4zM10 4h5v10h-5zM16 4h4v13h-4z' },
+  { id: 'custos', rotulo: 'Custos', icone: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3' },
 ];
 
 function Icone({ caminho }) {
@@ -85,20 +87,22 @@ function Sistema({ perfil, setPerfil }) {
   const [inquilinoAberto, setInquilinoAberto] = useState(null);
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [filtroContratos, setFiltroContratos] = useState(null);
-  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], regras: undefined });
+  const [mesCustos, setMesCustos] = useState(null);
+  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], custos: [], regras: undefined });
   const [carregando, setCarregando] = useState(true);
 
   // Busca tudo na API (READ)
   const recarregar = useCallback(async () => {
     try {
-      const [inquilinos, contratos, solicitacoes, pagamentos, regras] = await Promise.all([
+      const [inquilinos, contratos, solicitacoes, pagamentos, regras, custos] = await Promise.all([
         api.listar('inquilinos'),
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
         api.listar('configuracoes').catch(() => undefined),
+        api.listar('custos').catch(() => []),
       ]);
-      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras });
+      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras, custos });
     } catch (erro) {
       avisar(erro.message, 'erro');
     } finally {
@@ -120,6 +124,7 @@ function Sistema({ perfil, setPerfil }) {
   function trocarAba(id, filtro = null) {
     setAba(id);
     if (id === 'contratos') setFiltroContratos(filtro);
+    if (id === 'custos') setMesCustos(filtro?.mes || null);
     if (id === 'inquilinos') setInquilinoAberto(null);
     window.scrollTo(0, 0);
   }
@@ -183,6 +188,9 @@ function Sistema({ perfil, setPerfil }) {
             )}
             {aba === 'solicitacoes' && (
               <Solicitacoes {...dados} recarregar={recarregar} abrirInquilino={abrirInquilino} />
+            )}
+            {aba === 'custos' && (
+              <Custos {...dados} key={mesCustos || 'atual'} mesInicial={mesCustos} recarregar={recarregar} abrirInquilino={abrirInquilino} />
             )}
           </>
         )}

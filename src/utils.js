@@ -315,3 +315,51 @@ export function dataPorExtenso(data = new Date()) {
   const texto = data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
+
+// ---------- Custos e resultado do mês ----------
+
+export const CATEGORIAS_CUSTO = ['Manutenção', 'Material', 'Mão de obra', 'IPTU', 'Condomínio', 'Seguro', 'Taxas', 'Outro'];
+
+// "2026-11" do mês atual (ou de uma data)
+export const mesAtual = (data = new Date()) => chaveMes(data);
+
+// Anda N meses a partir de "2026-11" (ex.: -1 = mês anterior)
+export function somarMes(chave, quantos) {
+  const [ano, mes] = chave.split('-').map(Number);
+  return chaveMes(new Date(ano, mes - 1 + quantos, 1));
+}
+
+// Junta o que entrou (aluguéis pagos) e o que saiu (custos) num mês
+export function resumoDoMes(chave, { contratos = [], pagamentos = [], custos = [] }) {
+  const [ano, mes] = chave.split('-').map(Number);
+  const inicioMes = new Date(ano, mes - 1, 1);
+  const fimMes = new Date(ano, mes, 0);
+
+  const doMes = custos.filter((c) => String(c.data).slice(0, 7) === chave);
+  const totalCustos = arredondar(doMes.reduce((s, c) => s + Number(c.valor), 0));
+
+  const pagos = pagamentos.filter((p) => String(p.referencia).slice(0, 7) === chave);
+  const recebido = arredondar(pagos.reduce((s, p) => s + Number(p.valor_pago), 0));
+
+  // Previsto: aluguel de todo contrato que estava valendo naquele mês
+  const previsto = arredondar(
+    contratos
+      .filter((c) => lerData(c.data_inicio) <= fimMes && lerData(c.data_fim) >= inicioMes)
+      .reduce((s, c) => s + Number(c.valor_aluguel), 0),
+  );
+
+  const porCategoria = CATEGORIAS_CUSTO.map((categoria) => {
+    const itens = doMes.filter((c) => c.categoria === categoria);
+    return { categoria, quantidade: itens.length, valor: arredondar(itens.reduce((s, c) => s + Number(c.valor), 0)) };
+  }).filter((c) => c.quantidade);
+
+  return {
+    chave,
+    custos: doMes,
+    totalCustos,
+    recebido,
+    previsto,
+    resultado: arredondar(recebido - totalCustos),
+    porCategoria,
+  };
+}
