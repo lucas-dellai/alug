@@ -4294,3 +4294,133 @@ h2,
 .botao-whatsapp:hover {
   background: #178a45;
 }
+
+/* ================= Topo da ficha do inquilino ================= */
+.ficha-barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.ficha-barra .voltar {
+  margin-bottom: 0;
+}
+
+.ficha-icones {
+  display: flex;
+  gap: 4px;
+}
+
+.ficha-icones .botao-engrenagem {
+  position: static !important;
+}
+
+.botao-icone-redondo {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--suave);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.botao-icone-redondo:hover {
+  background: var(--superficie);
+  border-color: var(--borda);
+  color: var(--primaria);
+}
+
+.botao-icone-redondo.icone-perigo:hover {
+  background: var(--vermelho-fundo);
+  border-color: #f0b9b2;
+  color: var(--vermelho);
+}
+
+.ficha-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ficha-cabecalho .avatar-grande {
+  width: 64px;
+  height: 64px;
+  font-size: 22px;
+  flex: none;
+}
+
+.ficha-identidade {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ficha-identidade h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ficha-subtitulo {
+  margin: 0;
+  color: var(--suave);
+  font-size: 15px;
+}
+
+.ficha-contatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.contato-pilula {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--tinta);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.contato-pilula:hover {
+  border-color: var(--primaria);
+  color: var(--primaria);
+}
+
+.contato-whatsapp {
+  background: #1fa855;
+  border-color: #1fa855;
+  color: #fff;
+}
+
+.contato-whatsapp:hover {
+  background: #178a45;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .ficha-cabecalho {
+    align-items: flex-start;
+  }
+
+  .ficha-cabecalho .avatar-grande {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .ficha-identidade h1 {
+    font-size: 26px;
+  }
+}
