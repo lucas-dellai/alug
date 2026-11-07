@@ -4594,3 +4594,24 @@ h2,
   border-color: var(--primaria);
   background: var(--primaria-clara);
 }
+
+/* Duração do contrato: 3, 6, 12, 24 meses ou personalizado */
+.opcoes-segmento.opcoes-duracao {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.opcoes-duracao button {
+  white-space: nowrap;
+  padding: 8px 4px;
+}
+
+@media (max-width: 560px) {
+  .opcoes-segmento.opcoes-duracao {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .opcoes-duracao button:last-child {
+    grid-column: 1 / -1;
+  }
+}
