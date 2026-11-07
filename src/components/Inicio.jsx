@@ -18,7 +18,7 @@ import {
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
 
-export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], informes = [], regras, recarregar, irPara, abrirInquilino }) {
+export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], informes = [], advertencias = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
   const [conferindo, setConferindo] = useState(null);
   const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
@@ -103,6 +103,20 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
       titulo: `${c.inquilinos?.nome || 'Inquilino'} recusou "${c.titulo}"`,
       texto: c.resposta_comentario ? `“${c.resposta_comentario}”` : 'Sem comentário',
       abrir: () => abrirInquilino(c.inquilino_id),
+    });
+  }
+
+  // Advertências que o inquilino contestou nos últimos 15 dias
+  for (const a of advertencias) {
+    if (a.resposta !== 'Contestada' || new Date(a.respondido_em).getTime() < limiteRecusa) continue;
+    const nome = inquilinos.find((i) => i.id === a.inquilino_id)?.nome || 'Inquilino';
+    pontos.push({
+      id: `adv${a.id}`,
+      grupo: 'Comunicados',
+      nivel: 'amarelo',
+      titulo: `${nome} não concordou com a advertência "${a.titulo}"`,
+      texto: a.resposta_comentario ? `“${a.resposta_comentario}”` : 'Sem comentário',
+      abrir: () => abrirInquilino(a.inquilino_id),
     });
   }
 

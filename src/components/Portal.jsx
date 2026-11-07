@@ -10,10 +10,12 @@ import DetalheSolicitacao from './DetalheSolicitacao';
 import Documentos from './Documentos';
 import { HistoricoPagamentos, ModalInformarPagamento } from './Pagamentos';
 import { ComunicadosDoPortal } from './Comunicados';
+import { AdvertenciasDoPortal } from './Advertencias';
 import {
   analisarContratos,
   dataBR,
   especificacoes,
+  listaDeRegras,
   linkWhatsApp,
   moeda,
   primeiroNome,
@@ -30,6 +32,7 @@ export default function Portal({ perfil, setPerfil }) {
   const [comunicados, setComunicados] = useState([]);
   const [imoveis, setImoveis] = useState([]);
   const [informes, setInformes] = useState([]);
+  const [advertencias, setAdvertencias] = useState([]);
   const [informando, setInformando] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
@@ -38,7 +41,7 @@ export default function Portal({ perfil, setPerfil }) {
 
   const recarregar = useCallback(async () => {
     try {
-      const [c, s, p, r, com, im, inf] = await Promise.all([
+      const [c, s, p, r, com, im, inf, adv] = await Promise.all([
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
@@ -46,8 +49,10 @@ export default function Portal({ perfil, setPerfil }) {
         api.listar('comunicados').catch(() => []),
         api.listar('imoveis').catch(() => []),
         api.listar('informes').catch(() => []),
+        api.listar('advertencias').catch(() => []),
       ]);
       setInformes(inf);
+      setAdvertencias(adv);
       setRegras(r);
       setComunicados(com);
       setImoveis(im);
@@ -95,6 +100,7 @@ export default function Portal({ perfil, setPerfil }) {
               </h1>
             </div>
 
+            <AdvertenciasDoPortal advertencias={advertencias} recarregar={recarregar} />
             <ComunicadosDoPortal comunicados={comunicados} recarregar={recarregar} />
 
             {!lista.length && (
@@ -302,6 +308,17 @@ function InfoAluguel({ contrato: c, imovel, regras }) {
               <span className="inclui-nao">✕ Por sua conta:</span> {imovel.nao_incluso.join(', ')}
             </p>
           )}
+        </div>
+      )}
+
+      {listaDeRegras(imovel?.regras).length > 0 && (
+        <div className="regras-imovel">
+          <h3>Regras do imóvel</h3>
+          <ul>
+            {listaDeRegras(imovel.regras).map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
         </div>
       )}
 

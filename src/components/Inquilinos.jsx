@@ -6,6 +6,7 @@ import { FormContrato, FormInquilino } from './Formularios';
 import Documentos from './Documentos';
 import AcessoPortal from './AcessoPortal';
 import { ComunicadosDoInquilino } from './Comunicados';
+import { AdvertenciasDoInquilino } from './Advertencias';
 import { BotaoEngrenagem } from './Contratos';
 import { InformacoesAdicionais, ModalConfigFicha } from './FichaPersonalizada';
 import DetalheSolicitacao from './DetalheSolicitacao';
@@ -271,6 +272,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
       )}
 
       {ver('comunicados') && <ComunicadosDoInquilino inquilino={inquilino} />}
+      {ver('advertencias') && <AdvertenciasDoInquilino inquilino={inquilino} />}
 
       <div className="ficha-grade">
         <div className="ficha-coluna">

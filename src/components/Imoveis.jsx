@@ -15,6 +15,8 @@ import {
   reduzirFoto,
   semAcento,
   situacaoImoveis,
+  SUGESTOES_REGRAS,
+  listaDeRegras,
 } from '../utils';
 
 const FILTROS = ['Todos', 'Alugado', 'Disponível', 'Reservado'];
@@ -195,6 +197,10 @@ function CartaoImovel({ imovel, aoEditar, aoAlugar, abrirInquilino }) {
           </div>
         )}
 
+        {listaDeRegras(imovel.regras).length > 0 && (
+          <p className="sub pequeno">📋 {listaDeRegras(imovel.regras).length} regra(s) cadastrada(s)</p>
+        )}
+
         {c ? (
           <div className="imovel-contrato">
             <div className="imovel-contrato-topo">
@@ -298,6 +304,7 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ca
     mobiliado: imovel?.mobiliado ?? false,
     aceita_pet: imovel?.aceita_pet ?? false,
     descricao: imovel?.descricao || '',
+    regras: imovel?.regras || '',
     incluso: imovel?.incluso || [],
     nao_incluso: imovel?.nao_incluso || [],
   });
@@ -554,6 +561,29 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ca
             + Adicionar
           </button>
         </div>
+
+        <h3 className="secao-formulario">Regras do imóvel</h3>
+        <p className="texto-suave pequeno">Uma regra por linha. O inquilino vê essas regras no portal.</p>
+        <div className="sugestoes-regras">
+          {SUGESTOES_REGRAS.filter((r) => !listaDeRegras(v.regras).includes(r)).map((r) => (
+            <button
+              key={r}
+              type="button"
+              className="chip chip-pequeno"
+              onClick={() => setV((atual) => ({ ...atual, regras: [...listaDeRegras(atual.regras), r].join('\n') }))}
+            >
+              + {r}
+            </button>
+          ))}
+        </div>
+        <Campo rotulo="Regras" largo>
+          <textarea
+            rows="5"
+            value={v.regras}
+            onChange={muda('regras')}
+            placeholder={'Ex.:\nSilêncio das 22h às 8h\nProibido fumar dentro do imóvel'}
+          />
+        </Campo>
 
         <h3 className="secao-formulario">Descrição</h3>
         <Campo rotulo="Detalhes do imóvel" largo>
