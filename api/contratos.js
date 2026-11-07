@@ -23,7 +23,7 @@ export default criarCrud({
     'observacoes',
   ],
   // Traz junto o inquilino e o imóvel cadastrado
-  selecionar: '*, inquilinos(id, nome, telefone), imoveis(id, nome, endereco, tipo, quartos, banheiros, vagas, area_m2, foto_url)',
+  selecionar: '*, inquilinos(id, nome, telefone), imoveis(id, nome, endereco, tipo, finalidade, quartos, banheiros, vagas, area_m2, foto_url)',
   ordenar: { coluna: 'data_fim' },
   filtros: ['inquilino_id'],
   inquilinoPode: ['GET'],

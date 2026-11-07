@@ -12,6 +12,7 @@ import {
 } from './_lib/supabase.js';
 
 const PADRAO = {
+  categorias_imovel: ['Residencial', 'Comercial'],
   ficha_ocultas: [],
   campos_personalizados: [],
   cobrar_multa: true,
@@ -75,6 +76,25 @@ export default rota(async (req, res) => {
   if (req.method === 'PUT') {
     if (perfil.papel !== 'anfitriao') throw new ErroApi(403, 'Apenas o anfitrião pode alterar as configurações.');
     const corpo = req.body || {};
+
+    // Categorias de imóvel (Residencial, Comercial e as que o anfitrião criar)
+    if (corpo.somente_categorias) {
+      if (!Array.isArray(corpo.categorias_imovel)) throw new ErroApi(400, 'Lista de categorias inválida.');
+      const categorias = [];
+      for (const item of corpo.categorias_imovel) {
+        const nome = String(item || '').trim().slice(0, 30);
+        if (nome && !categorias.some((c) => c.toLowerCase() === nome.toLowerCase())) categorias.push(nome);
+      }
+      if (!categorias.length) throw new ErroApi(400, 'Deixe pelo menos uma categoria.');
+      if (categorias.length > 20) throw new ErroApi(400, 'Use no máximo 20 categorias.');
+      const { data, error } = await supabase
+        .from('configuracoes')
+        .upsert({ id: usuario.id, categorias_imovel: categorias, atualizado_em: new Date().toISOString() }, { onConflict: 'id' })
+        .select('*')
+        .single();
+      if (error) throw traduzirErroBanco(error);
+      return res.status(200).json({ ...PADRAO, ...data });
+    }
 
     // Configuração da ficha do inquilino (seções visíveis e campos personalizados): salva só essa parte
     if (corpo.somente_ficha) {
