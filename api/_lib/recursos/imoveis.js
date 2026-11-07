@@ -39,8 +39,9 @@ export default criarCrud({
     }
     exigirCampos(dados, { nome: 'Nome do imóvel', endereco: 'Endereço' }, modo);
     if (dados.tipo && !TIPOS.includes(dados.tipo)) throw new ErroApi(400, 'Tipo de imóvel inválido.');
-    if (dados.finalidade && !['Residencial', 'Comercial'].includes(dados.finalidade)) {
-      throw new ErroApi(400, 'Escolha residencial ou comercial.');
+    if (dados.finalidade !== undefined) {
+      dados.finalidade = String(dados.finalidade || '').trim().slice(0, 30);
+      if (!dados.finalidade) throw new ErroApi(400, 'Escolha a categoria do imóvel.');
     }
     for (const campo of ['quartos', 'banheiros', 'vagas']) {
       if (dados[campo] !== undefined && dados[campo] !== null) {
