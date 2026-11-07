@@ -2,7 +2,6 @@
 import { useMemo, useState } from 'react';
 import { Etiqueta } from './UI';
 import { ModalReajuste } from './Formularios';
-import { FormCusto } from './Custos';
 import { ModalConferirPagamento } from './Pagamentos';
 import {
   analisarContratos,
@@ -22,7 +21,6 @@ const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasad
 
 export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], informes = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
-  const [lancandoCusto, setLancandoCusto] = useState(false);
   const [conferindo, setConferindo] = useState(null);
   const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const ativos = lista.filter((c) => c.situacao.tipo !== 'encerrado');
@@ -254,87 +252,6 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
         </section>
 
         <div className="inicio-coluna">
-          {/* Custos do mês: ver, lançar e editar a partir daqui */}
-          <section className="cartao custos-inicio">
-            <div className="cartao-topo">
-              <h2>Custos de {nomeMes(mes.chave).split(' ')[0].toLowerCase()}</h2>
-              <button className="botao botao-pequeno botao-primario" onClick={() => setLancandoCusto(true)}>
-                + Lançar custo
-              </button>
-            </div>
-            <div className="custos-inicio-numeros">
-              <div>
-                <span>Recebido</span>
-                <strong className="texto-verde">{moeda(mes.recebido)}</strong>
-              </div>
-              <div>
-                <span>Custos</span>
-                <strong className="texto-vermelho">− {moeda(mes.totalCustos)}</strong>
-              </div>
-              <div>
-                <span>Resultado</span>
-                <strong className={mes.resultado < 0 ? 'texto-vermelho' : ''}>{moeda(mes.resultado)}</strong>
-              </div>
-            </div>
-            {!mes.custos.length ? (
-              <p className="texto-suave pequeno">Nenhum custo lançado neste mês.</p>
-            ) : (
-              <ul className="custos-inicio-lista">
-                {mes.custos.slice(0, 4).map((c) => (
-                  <li key={c.id}>
-                    <span>
-                      <strong>{c.descricao}</strong>
-                      <small className="sub">
-                        {dataBR(c.data)} · {c.categoria}
-                        {c.solicitacoes?.titulo ? ` · chamado: ${c.solicitacoes.titulo}` : ''}
-                      </small>
-                    </span>
-                    <strong className="texto-vermelho">{moeda(c.valor)}</strong>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button className="link" onClick={() => irPara('custos', { mes: mes.chave })}>
-              {mes.custos.length > 4 ? `Ver todos os ${mes.custos.length} custos` : 'Ver, editar e comparar meses'} ›
-            </button>
-          </section>
-
-          {/* Gráfico: aluguéis do mês por situação do pagamento */}
-          <section className="cartao">
-            <h2>Aluguéis do mês</h2>
-            <p className="grafico-destaque">
-              <strong>{percentualRecebido}%</strong> <span className="texto-suave">em dia · {moeda(recebido)} de {moeda(receita)}</span>
-            </p>
-            <div className="barra-partes" role="img" aria-label={porStatus.map((p) => `${p.status}: ${moeda(p.valor)}`).join(', ')}>
-              {porStatus
-                .filter((p) => p.valor > 0)
-                .map((p) => (
-                  <span
-                    key={p.status}
-                    className="barra-parte"
-                    style={{ flexGrow: p.valor, background: CORES_PAGAMENTO[p.status] }}
-                    title={`${p.status}: ${moeda(p.valor)} (${p.quantidade} contrato(s))`}
-                  />
-                ))}
-            </div>
-            <ul className="legenda">
-              {porStatus.map((p) => (
-                <li key={p.status}>
-                  <button
-                    className="legenda-botao"
-                    onClick={() => irPara('contratos', { status: p.status })}
-                    title={`Ver contratos "${p.status}"`}
-                  >
-                    <span className="legenda-cor" style={{ background: CORES_PAGAMENTO[p.status] }} />
-                    <span>{p.status}</span>
-                    <strong>{moeda(p.valor)}</strong>
-                    <span className="texto-suave">({p.quantidade})</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-
           {/* Gráfico: receita por imóvel */}
           <section className="cartao">
             <h2>Aluguel por imóvel</h2>
@@ -400,18 +317,6 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
           aoFechar={() => setConferindo(null)}
           aoSalvar={() => {
             setConferindo(null);
-            recarregar();
-          }}
-        />
-      )}
-
-      {lancandoCusto && (
-        <FormCusto
-          contratos={contratos}
-          solicitacoes={solicitacoes}
-          aoFechar={() => setLancandoCusto(false)}
-          aoSalvar={() => {
-            setLancandoCusto(false);
             recarregar();
           }}
         />
