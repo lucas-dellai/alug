@@ -8,6 +8,7 @@ export default criarCrud({
   tabela: 'contratos',
   campos: [
     'inquilino_id',
+    'imovel_id',
     'imovel',
     'valor_aluguel',
     'dia_vencimento',
@@ -21,8 +22,8 @@ export default criarCrud({
     'data_ultimo_reajuste',
     'observacoes',
   ],
-  // Traz junto o nome e o telefone do inquilino
-  selecionar: '*, inquilinos(id, nome, telefone)',
+  // Traz junto o inquilino e o imóvel cadastrado
+  selecionar: '*, inquilinos(id, nome, telefone), imoveis(id, nome, endereco, tipo, quartos, banheiros, vagas, area_m2, foto_url)',
   ordenar: { coluna: 'data_fim' },
   filtros: ['inquilino_id'],
   inquilinoPode: ['GET'],
