@@ -363,3 +363,76 @@ export function resumoDoMes(chave, { contratos = [], pagamentos = [], custos = [
     porCategoria,
   };
 }
+
+// ---------- Imóveis ----------
+
+export const TIPOS_IMOVEL = ['Casa', 'Apartamento', 'Kitnet', 'Sobrado', 'Sala comercial', 'Outro'];
+
+// Situação de cada imóvel pelo contrato: Alugado (contrato valendo hoje), Reservado (contrato começa depois) ou Disponível
+export function situacaoImoveis(imoveis, contratosAnalisados, referencia = hoje()) {
+  return imoveis.map((imovel) => {
+    const doImovel = contratosAnalisados.filter((c) => c.imovel_id === imovel.id);
+    const atual = doImovel.find((c) => lerData(c.data_inicio) <= referencia && lerData(c.data_fim) >= referencia);
+    const futuro = !atual && doImovel.find((c) => lerData(c.data_inicio) > referencia);
+    const situacao = atual ? 'Alugado' : futuro ? 'Reservado' : 'Disponível';
+    return { ...imovel, situacao, contrato: atual || futuro || null, contratos: doImovel };
+  });
+}
+
+// "3 quartos · 2 banheiros · 1 vaga · 80 m²"
+export function especificacoes(imovel) {
+  if (!imovel) return '';
+  const plural = (n, um, varios) => `${n} ${Number(n) === 1 ? um : varios}`;
+  return [
+    imovel.quartos != null && plural(imovel.quartos, 'quarto', 'quartos'),
+    imovel.banheiros != null && plural(imovel.banheiros, 'banheiro', 'banheiros'),
+    imovel.vagas != null && plural(imovel.vagas, 'vaga', 'vagas'),
+    imovel.area_m2 && `${Number(imovel.area_m2).toLocaleString('pt-BR')} m²`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+// Diminui a foto antes de enviar (máx. 1600 px, JPEG), para carregar rápido no celular
+export async function reduzirFoto(arquivo, maximo = 1600) {
+  try {
+    const bitmap = await createImageBitmap(arquivo);
+    const escala = Math.min(1, maximo / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * escala);
+    canvas.height = Math.round(bitmap.height * escala);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/jpeg', 0.85));
+    return blob || arquivo;
+  } catch {
+    return arquivo;
+  }
+}
+
+// ---------- Comunicados ----------
+
+export const TIPOS_COMUNICADO = [
+  'Aviso',
+  'Cobrança',
+  'Visita ao imóvel',
+  'Manutenção programada',
+  'Reajuste',
+  'Renovação',
+  'Regras do imóvel',
+  'Outro',
+];
+
+export function situacaoComunicado(c) {
+  if (c.resposta === 'Confirmado') return { texto: 'Confirmado', cor: 'verde' };
+  if (c.resposta === 'Recusado') return { texto: 'Recusado', cor: 'vermelho' };
+  if (c.pede_resposta) return { texto: c.lido_em ? 'Lido, sem resposta' : 'Aguardando leitura', cor: 'amarelo' };
+  return { texto: c.lido_em ? 'Lido' : 'Não lido', cor: c.lido_em ? 'verde' : 'cinza' };
+}
+
+export const dataHoraBR = (iso) =>
+  iso
+    ? new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '';
+
+// Itens que o anfitrião marca como "incluso" ou "não incluso" no aluguel (ele pode criar outros)
+export const ITENS_INCLUSOS_PADRAO = ['Água', 'Luz', 'Gás', 'Internet', 'IPTU', 'Condomínio', 'Lixo', 'Limpeza', 'Jardinagem', 'Seguro'];

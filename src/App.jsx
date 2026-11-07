@@ -9,6 +9,7 @@ import Contratos from './components/Contratos';
 import Inquilinos from './components/Inquilinos';
 import Solicitacoes from './components/Solicitacoes';
 import Custos from './components/Custos';
+import Imoveis from './components/Imoveis';
 import Portal from './components/Portal';
 import { MenuUsuario, ModalPerfil } from './components/Perfil';
 
@@ -67,10 +68,10 @@ function Entrada() {
 
 const ABAS = [
   { id: 'inicio', rotulo: 'Início', icone: 'M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
+  { id: 'imoveis', rotulo: 'Imóveis', icone: 'M3 21h18M5 21V9l7-5 7 5v12M10 21v-5h4v5M9 11h.01M15 11h.01' },
   { id: 'contratos', rotulo: 'Contratos', icone: 'M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 1v5h5M9 13h7M9 17h5' },
   { id: 'inquilinos', rotulo: 'Inquilinos', icone: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 10a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6' },
   { id: 'solicitacoes', rotulo: 'Solicitações', icone: 'M4 4h5v16H4zM10 4h5v10h-5zM16 4h4v13h-4z' },
-  { id: 'custos', rotulo: 'Custos', icone: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3' },
 ];
 
 function Icone({ caminho }) {
@@ -88,21 +89,23 @@ function Sistema({ perfil, setPerfil }) {
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [filtroContratos, setFiltroContratos] = useState(null);
   const [mesCustos, setMesCustos] = useState(null);
-  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], custos: [], regras: undefined });
+  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], custos: [], imoveis: [], comunicados: [], regras: undefined });
   const [carregando, setCarregando] = useState(true);
 
   // Busca tudo na API (READ)
   const recarregar = useCallback(async () => {
     try {
-      const [inquilinos, contratos, solicitacoes, pagamentos, regras, custos] = await Promise.all([
+      const [inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados] = await Promise.all([
         api.listar('inquilinos'),
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
         api.listar('configuracoes').catch(() => undefined),
         api.listar('custos').catch(() => []),
+        api.listar('imoveis').catch(() => []),
+        api.listar('comunicados').catch(() => []),
       ]);
-      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras, custos });
+      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados });
     } catch (erro) {
       avisar(erro.message, 'erro');
     } finally {
@@ -135,7 +138,7 @@ function Sistema({ perfil, setPerfil }) {
     ABAS.map((a) => (
       <button
         key={a.id}
-        className={`${classe} ${aba === a.id ? `${classe}-ativa` : ''}`}
+        className={`${classe} ${(aba === 'custos' ? 'inicio' : aba) === a.id ? `${classe}-ativa` : ''}`}
         onClick={() => trocarAba(a.id)}
         aria-current={aba === a.id ? 'page' : undefined}
       >
@@ -173,6 +176,7 @@ function Sistema({ perfil, setPerfil }) {
             {aba === 'inicio' && (
               <Inicio {...dados} perfil={perfil} recarregar={recarregar} abrirInquilino={abrirInquilino} irPara={trocarAba} />
             )}
+            {aba === 'imoveis' && <Imoveis {...dados} recarregar={recarregar} abrirInquilino={abrirInquilino} />}
             {aba === 'contratos' && (
               <Contratos
                 key={JSON.stringify(filtroContratos)}
@@ -190,7 +194,14 @@ function Sistema({ perfil, setPerfil }) {
               <Solicitacoes {...dados} recarregar={recarregar} abrirInquilino={abrirInquilino} />
             )}
             {aba === 'custos' && (
-              <Custos {...dados} key={mesCustos || 'atual'} mesInicial={mesCustos} recarregar={recarregar} abrirInquilino={abrirInquilino} />
+              <Custos
+                {...dados}
+                key={mesCustos || 'atual'}
+                mesInicial={mesCustos}
+                recarregar={recarregar}
+                abrirInquilino={abrirInquilino}
+                voltar={() => trocarAba('inicio')}
+              />
             )}
           </>
         )}

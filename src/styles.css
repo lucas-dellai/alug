@@ -3312,3 +3312,599 @@ input[type='month'] {
     font-size: 10px;
   }
 }
+
+
+/* ================= Imóveis ================= */
+.filtro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip-ativo {
+  background: var(--primaria);
+  border-color: var(--primaria);
+  color: #fff;
+}
+
+.chip-numero {
+  font-size: 12px;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--tinta);
+  text-align: center;
+}
+
+.chip-ativo .chip-numero {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.filtro-busca {
+  margin-left: auto;
+  width: 260px;
+  max-width: 100%;
+}
+
+.grade-imoveis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.cartao-imovel {
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.imovel-capa {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border: none;
+  background: var(--superficie-2);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.imovel-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+
+.imovel-capa:hover img {
+  transform: scale(1.03);
+}
+
+.imovel-sem-foto {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--suave);
+}
+
+.imovel-selo {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.selo-verde {
+  background: var(--primaria);
+}
+
+.selo-azul {
+  background: var(--azul);
+}
+
+.selo-amarelo {
+  background: #b7791f;
+}
+
+.imovel-editar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--tinta);
+  font-size: 15px;
+}
+
+.imovel-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  flex: 1;
+}
+
+.imovel-corpo h3 {
+  margin: 0 0 2px;
+  font-size: 17px;
+}
+
+.imovel-specs {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.imovel-inclusos {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.imovel-inclusos p {
+  margin: 0;
+}
+
+.inclui-sim {
+  color: var(--verde);
+  font-weight: 700;
+}
+
+.inclui-nao {
+  color: var(--vermelho);
+  font-weight: 700;
+}
+
+.imovel-contrato {
+  margin-top: auto;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+}
+
+.imovel-contrato-topo,
+.imovel-contrato-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.imovel-livre {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--azul);
+  font-weight: 600;
+}
+
+.foto-imovel-campo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.foto-imovel-previa {
+  width: 180px;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--superficie-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--suave);
+  font-size: 13px;
+}
+
+.foto-imovel-previa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grade-formulario.grade-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grade-formulario.grade-4 .campo-largo {
+  grid-column: span 2;
+}
+
+.marcadores {
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.marcadores .caixa-marcar {
+  margin: 0;
+}
+
+.itens-inclusos {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.item-incluso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--branco);
+}
+
+.item-sim {
+  border-color: #9fd3b4;
+  background: var(--verde-fundo);
+}
+
+.item-nao {
+  border-color: #f0b9b2;
+  background: var(--vermelho-fundo);
+}
+
+.item-nome {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.item-opcoes {
+  display: flex;
+  gap: 4px;
+}
+
+.item-opcoes button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--suave);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.item-opcoes button:first-child.ativo {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+}
+
+.item-opcoes button:last-child.ativo {
+  background: var(--vermelho);
+  border-color: var(--vermelho);
+  color: #fff;
+}
+
+.novo-item {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.novo-item input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ================= Comunicados ================= */
+.lista-comunicados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.lista-comunicados li {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--branco);
+}
+
+.comunicado-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.comunicado-topo > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.comunicado-texto {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.comunicado-resposta {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.resposta-sim {
+  background: var(--verde-fundo);
+  color: var(--verde);
+}
+
+.resposta-nao {
+  background: var(--vermelho-fundo);
+  color: var(--vermelho);
+}
+
+.comunicado-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.comunicado-tipo {
+  justify-self: start;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primaria);
+}
+
+.comunicado-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comunicado-acoes .botao {
+  flex: 1;
+  min-width: 130px;
+}
+
+.portal-comunicados.com-pendencia {
+  border-color: #e0a526;
+  box-shadow: 0 0 0 3px var(--amarelo-fundo);
+}
+
+.comunicado-pendente {
+  border-left: 4px solid #e0a526 !important;
+}
+
+.aviso-suave {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--amarelo-fundo);
+  color: var(--amarelo);
+  font-size: 13px;
+}
+
+/* ================= Portal: meu aluguel ================= */
+.info-aluguel {
+  overflow: hidden;
+}
+
+.info-aluguel-foto {
+  display: block;
+  width: calc(100% + 40px);
+  margin: -20px -20px 14px;
+  aspect-ratio: 16 / 8;
+  object-fit: cover;
+}
+
+.info-aluguel-imovel {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 12px;
+}
+
+.info-aluguel .imovel-inclusos {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+}
+
+@media (max-width: 720px) {
+  .filtro-busca {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .grade-imoveis {
+    grid-template-columns: 1fr;
+  }
+
+  .grade-formulario.grade-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .itens-inclusos {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-item {
+    font-size: 9.5px;
+    letter-spacing: -0.01em;
+  }
+
+  .nav-item svg {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+.contador {
+  white-space: nowrap;
+}
+
+.comunicado-acoes .botao-sucesso {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+}
+
+.marcadores {
+  margin-bottom: 14px;
+}
+
+@media (max-width: 720px) {
+  .chip {
+    padding: 7px 11px;
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .imovel-capa {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* Custos no Início */
+.custos-inicio-numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.custos-inicio-numeros div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  min-width: 0;
+}
+
+.custos-inicio-numeros span {
+  font-size: 12px;
+  color: var(--suave);
+}
+
+.custos-inicio-numeros strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.custos-inicio-lista {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.custos-inicio-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.custos-inicio-lista li > span {
+  display: grid;
+  min-width: 0;
+}
+
+.custos-inicio-numeros strong {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+@media (max-width: 720px) {
+  .custos-inicio-numeros {
+    grid-template-columns: 1fr;
+    gap: 0;
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    background: var(--branco);
+    overflow: hidden;
+  }
+
+  .custos-inicio-numeros div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .custos-inicio-numeros div:last-child {
+    border-bottom: none;
+  }
+
+  .custos-inicio-numeros span {
+    font-size: 14px;
+  }
+
+  .custos-inicio-numeros strong {
+    font-size: 16px;
+  }
+}
