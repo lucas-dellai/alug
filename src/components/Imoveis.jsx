@@ -159,6 +159,9 @@ function CartaoImovel({ imovel, aoEditar, aoAlugar, abrirInquilino }) {
         <div>
           <h3>{imovel.nome}</h3>
           <p className="sub">
+            <span className={`finalidade finalidade-${(imovel.finalidade || 'Residencial').toLowerCase()}`}>
+              {imovel.finalidade || 'Residencial'}
+            </span>{' '}
             {imovel.tipo} · {imovel.endereco}
           </p>
           {specs && <p className="imovel-specs">{specs}</p>}
@@ -250,6 +253,7 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ao
     nome: imovel?.nome || '',
     endereco: imovel?.endereco || '',
     tipo: imovel?.tipo || 'Casa',
+    finalidade: imovel?.finalidade || 'Residencial',
     quartos: imovel?.quartos ?? '',
     banheiros: imovel?.banheiros ?? '',
     vagas: imovel?.vagas ?? '',
@@ -383,6 +387,22 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ao
         <div className="grade-formulario">
           <Campo rotulo="Nome do imóvel" obrigatorio dica="Como você chama, ex.: Casa da Rua das Flores">
             <input value={v.nome} onChange={muda('nome')} required autoFocus={!imovel} />
+          </Campo>
+          <Campo rotulo="Finalidade">
+            <div className="opcoes-segmento" role="radiogroup" aria-label="Finalidade">
+              {['Residencial', 'Comercial'].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  role="radio"
+                  aria-checked={v.finalidade === f}
+                  className={v.finalidade === f ? 'ativo' : ''}
+                  onClick={() => setV((atual) => ({ ...atual, finalidade: f }))}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </Campo>
           <Campo rotulo="Tipo">
             <select value={v.tipo} onChange={muda('tipo')}>

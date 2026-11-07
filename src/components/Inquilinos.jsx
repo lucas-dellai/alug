@@ -6,6 +6,8 @@ import { FormContrato, FormInquilino } from './Formularios';
 import Documentos from './Documentos';
 import AcessoPortal from './AcessoPortal';
 import { ComunicadosDoInquilino } from './Comunicados';
+import { BotaoEngrenagem } from './Contratos';
+import { InformacoesAdicionais, ModalConfigFicha } from './FichaPersonalizada';
 import DetalheSolicitacao from './DetalheSolicitacao';
 import {
   analisarContratos,
@@ -149,6 +151,12 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
   const [novoContrato, setNovoContrato] = useState(false);
   const [pagando, setPagando] = useState(null);
   const [abertaId, setAbertaId] = useState(null);
+  const [configurando, setConfigurando] = useState(false);
+
+  // O que o anfitrião escolheu ver na ficha e os campos que ele criou
+  const ocultas = regras?.ficha_ocultas || [];
+  const ver = (secao) => !ocultas.includes(secao);
+  const camposPersonalizados = regras?.campos_personalizados || [];
 
   // DELETE
   async function excluir() {
@@ -198,6 +206,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           </div>
         </div>
         <div className="botoes">
+          <BotaoEngrenagem aoClicar={() => setConfigurando(true)} />
           <button className="botao botao-secundario" onClick={() => setEditando(true)}>
             Editar dados
           </button>
@@ -207,6 +216,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         </div>
       </div>
 
+      {ver('resumo') && (
       <ResumoInquilino
         inquilino={inquilino}
         contratos={contratos}
@@ -216,6 +226,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         informes={informes.filter((i) => contratos.some((c) => c.id === i.contrato_id))}
         aoConferir={setConferindo}
       />
+      )}
       {conferindo && (
         <ModalConferirPagamento
           informe={conferindo}
@@ -227,9 +238,11 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         />
       )}
 
-      <ComunicadosDoInquilino inquilino={inquilino} />
+      {ver('comunicados') && <ComunicadosDoInquilino inquilino={inquilino} />}
 
       <div className="ficha-grade">
+        <div className="ficha-coluna">
+        {ver('dados') && (
         <section className="cartao">
           <h2>Dados pessoais</h2>
           <dl className="dados">
@@ -254,13 +267,25 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
             </div>
           )}
         </section>
+        )}
+        {ver('adicionais') && (
+          <InformacoesAdicionais
+            inquilino={inquilino}
+            campos={camposPersonalizados.filter((c) => c.tipo !== 'anexo')}
+            aoConfigurar={() => setConfigurando(true)}
+          />
+        )}
+        </div>
 
         <div className="ficha-coluna">
-          <Documentos inquilinoId={inquilino.id} />
-          <AcessoPortal inquilino={inquilino} />
+          {ver('documentos') && (
+            <Documentos inquilinoId={inquilino.id} camposAnexo={camposPersonalizados.filter((c) => c.tipo === 'anexo')} />
+          )}
+          {ver('acesso') && <AcessoPortal inquilino={inquilino} />}
         </div>
       </div>
 
+      {ver('contratos') && (
       <section className="cartao">
         <div className="cartao-topo">
           <h2>Contratos</h2>
@@ -302,7 +327,9 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           ))
         )}
       </section>
+      )}
 
+      {ver('solicitacoes') && (
       <section className="cartao">
         <h2>Solicitações</h2>
         {!solicitacoes.length ? (
@@ -326,6 +353,18 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           </ul>
         )}
       </section>
+      )}
+
+      {configurando && (
+        <ModalConfigFicha
+          regras={regras}
+          aoFechar={() => setConfigurando(false)}
+          aoSalvar={() => {
+            setConfigurando(false);
+            recarregar();
+          }}
+        />
+      )}
 
       {abertaId && solicitacoes.find((s) => s.id === abertaId) && (
         <DetalheSolicitacao

@@ -18,7 +18,6 @@ import {
   moeda,
   primeiroNome,
   saudacao,
-  dataPorExtenso,
   nomeMes,
 } from '../utils';
 
@@ -91,9 +90,6 @@ export default function Portal({ perfil, setPerfil }) {
         ) : (
           <div className="pagina">
             <div>
-              <p className="texto-suave data-hoje">
-                {dataPorExtenso(new Date())}
-              </p>
               <h1>
                 {saudacao()}, {primeiroNome(perfil.nome)}!
               </h1>

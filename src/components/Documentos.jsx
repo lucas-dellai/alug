@@ -9,13 +9,17 @@ import { TIPOS_DOCUMENTO, dataBR, semAcento } from '../utils';
 
 const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5 MB
 const TIPOS_ACEITOS = ['application/pdf', 'image/jpeg', 'image/png'];
+const OUTRO = '__outro__';
 
 // somenteLeitura: usado no Portal do Inquilino (só ver e abrir)
-export default function Documentos({ inquilinoId, somenteLeitura }) {
+// camposAnexo: anexos que o anfitrião criou (ex.: "Ficha criminal"); por padrão só ele vê
+export default function Documentos({ inquilinoId, somenteLeitura, camposAnexo = [] }) {
   const { avisar, confirmar } = useUI();
   const [documentos, setDocumentos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [tipo, setTipo] = useState('RG');
+  const [tipoLivre, setTipoLivre] = useState('');
+  const [visivel, setVisivel] = useState(true);
   const [arquivo, setArquivo] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const entrada = useRef(null);
@@ -55,6 +59,8 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
   async function enviar(e) {
     e.preventDefault();
     if (!arquivo) return avisar('Escolha um arquivo.', 'erro');
+    const tipoFinal = tipo === OUTRO ? tipoLivre.trim() : tipo;
+    if (!tipoFinal) return avisar('Escreva o nome do documento.', 'erro');
     setEnviando(true);
     const nomeSeguro = semAcento(arquivo.name).replace(/[^a-z0-9._-]/g, '_');
     const caminho = `${inquilinoId}/${Date.now()}-${nomeSeguro}`;
@@ -62,7 +68,13 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
       const { error } = await supabase.storage.from('documentos').upload(caminho, arquivo, { contentType: arquivo.type });
       if (error) throw new Error('Não foi possível enviar o arquivo.');
       try {
-        await api.criar('documentos', { inquilino_id: inquilinoId, tipo, nome_arquivo: arquivo.name, caminho });
+        await api.criar('documentos', {
+          inquilino_id: inquilinoId,
+          tipo: tipoFinal,
+          nome_arquivo: arquivo.name,
+          caminho,
+          visivel_inquilino: visivel,
+        });
       } catch (erro) {
         await supabase.storage.from('documentos').remove([caminho]);
         throw erro;
@@ -77,6 +89,21 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
       setEnviando(false);
     }
   }
+
+  // Escolher o tipo: os padrões ficam visíveis ao inquilino; os personalizados, só para o anfitrião
+  function trocarTipo(novo) {
+    setTipo(novo);
+    setVisivel(TIPOS_DOCUMENTO.includes(novo) && novo !== 'Outro');
+  }
+
+  // Atalho dos anexos pendentes: já escolhe o tipo e abre o seletor de arquivo
+  function enviarPendente(nome) {
+    trocarTipo(nome);
+    entrada.current?.click();
+  }
+
+  const nomesAnexo = camposAnexo.map((c) => c.nome);
+  const pendentes = nomesAnexo.filter((nome) => !documentos.some((d) => d.tipo === nome));
 
   // Abre o arquivo com um link temporário (válido por 2 minutos)
   async function abrirArquivo(documento) {
@@ -110,11 +137,28 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
       {!somenteLeitura && (
       <>
       <form className="envio-documento" onSubmit={enviar}>
-        <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Tipo do documento">
-          {TIPOS_DOCUMENTO.map((t) => (
+        <select value={tipo} onChange={(e) => trocarTipo(e.target.value)} aria-label="Tipo do documento">
+          {TIPOS_DOCUMENTO.filter((t) => t !== 'Outro').map((t) => (
             <option key={t}>{t}</option>
           ))}
+          {nomesAnexo.length > 0 && (
+            <optgroup label="Seus campos">
+              {nomesAnexo.map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </optgroup>
+          )}
+          <option value={OUTRO}>Outro (escrever o nome)…</option>
         </select>
+        {tipo === OUTRO && (
+          <input
+            value={tipoLivre}
+            onChange={(e) => setTipoLivre(e.target.value)}
+            placeholder="Ex.: Score Serasa"
+            maxLength={60}
+            aria-label="Nome do documento"
+          />
+        )}
         <label className="escolher-arquivo">
           <input ref={entrada} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={escolher} />
           <span>{arquivo ? arquivo.name : 'Escolher arquivo…'}</span>
@@ -123,7 +167,26 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
           {enviando ? 'Enviando…' : 'Anexar'}
         </button>
       </form>
+      <label className="caixa-marcar caixa-marcar-pequena">
+        <input type="checkbox" checked={visivel} onChange={(e) => setVisivel(e.target.checked)} />
+        <span>O inquilino pode ver este documento no portal</span>
+      </label>
       <p className="texto-suave pequeno">PDF, JPG ou PNG de até 5 MB. Os arquivos ficam em uma área privada.</p>
+      {pendentes.length > 0 && (
+        <ul className="anexos-pendentes">
+          {pendentes.map((nome) => (
+            <li key={nome}>
+              <span>
+                <strong>{nome}</strong>
+                <small className="sub">Ainda não enviado</small>
+              </span>
+              <button type="button" className="botao botao-pequeno botao-secundario" onClick={() => enviarPendente(nome)}>
+                Enviar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       </>
       )}
 
@@ -137,7 +200,10 @@ export default function Documentos({ inquilinoId, somenteLeitura }) {
             <li key={d.id}>
               <span className="documento-icone">{d.nome_arquivo.toLowerCase().endsWith('.pdf') ? 'PDF' : 'IMG'}</span>
               <div>
-                <strong>{d.tipo}</strong>
+                <strong>
+                  {d.tipo}
+                  {!somenteLeitura && d.visivel_inquilino === false && <span className="so-voce">Só você vê</span>}
+                </strong>
                 <span className="sub">
                   {d.nome_arquivo} · {dataBR(d.enviado_em)}
                 </span>

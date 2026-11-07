@@ -10,7 +10,6 @@ import {
   moeda,
   primeiroNome,
   saudacao,
-  dataPorExtenso,
   estaEncerrada,
   nomeMes,
   mesAtual,
@@ -136,9 +135,6 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
     <div className="pagina">
       <div className="pagina-topo">
         <div>
-          <p className="texto-suave data-hoje">
-            {dataPorExtenso(hoje)}
-          </p>
           <h1>
             {saudacao(hoje)}, {primeiroNome(perfil.nome) || 'anfitrião'}!
           </h1>
