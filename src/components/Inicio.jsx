@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Etiqueta } from './UI';
 import { ModalReajuste } from './Formularios';
 import { FormCusto } from './Custos';
+import { ModalConferirPagamento } from './Pagamentos';
 import {
   analisarContratos,
   analisarSolicitacao,
@@ -19,9 +20,10 @@ import {
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
 
-export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], regras, recarregar, irPara, abrirInquilino }) {
+export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], informes = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
   const [lancandoCusto, setLancandoCusto] = useState(false);
+  const [conferindo, setConferindo] = useState(null);
   const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const ativos = lista.filter((c) => c.situacao.tipo !== 'encerrado');
 
@@ -78,6 +80,18 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
       titulo: `${s.titulo} · ${s.contratos?.inquilinos?.nome || ''}`,
       texto: `${s.status} · ${analise.alertas.map((a) => a.texto).join(' · ')}`,
       abrir: () => irPara('solicitacoes'),
+    });
+  }
+
+  // Pagamentos que o inquilino informou e esperam conferência
+  for (const i of informes) {
+    pontos.unshift({
+      id: `inf${i.id}`,
+      grupo: 'Pagamentos',
+      nivel: 'azul',
+      titulo: `${i.contratos?.inquilinos?.nome || 'Inquilino'} informou um pagamento`,
+      texto: `${nomeMes(i.referencia)} · ${moeda(i.valor)} · ${i.forma} · com comprovante`,
+      acao: { rotulo: 'Conferir', executar: () => setConferindo(i) },
     });
   }
 
@@ -379,6 +393,17 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
           </section>
         </div>
       </div>
+
+      {conferindo && (
+        <ModalConferirPagamento
+          informe={conferindo}
+          aoFechar={() => setConferindo(null)}
+          aoSalvar={() => {
+            setConferindo(null);
+            recarregar();
+          }}
+        />
+      )}
 
       {lancandoCusto && (
         <FormCusto

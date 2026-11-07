@@ -72,6 +72,14 @@ export function ModalPerfil({ perfil, aoFechar, aoSalvar }) {
   const [foto, setFoto] = useState(perfil.foto_url || '');
   const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const anfitriao = perfil.papel === 'anfitriao';
+  const [pix, setPix] = useState({
+    pix_tipo: perfil.pix_tipo || 'CPF',
+    pix_chave: perfil.pix_chave || '',
+    pix_banco: perfil.pix_banco || '',
+    pix_favorecido: perfil.pix_favorecido || '',
+  });
+  const mudaPix = (campo) => (e) => setPix((atual) => ({ ...atual, [campo]: e.target.value }));
 
   async function trocarFoto(e) {
     const arquivo = e.target.files?.[0];
@@ -95,7 +103,7 @@ export function ModalPerfil({ perfil, aoFechar, aoSalvar }) {
     if (!nome.trim()) return avisar('Informe seu nome.', 'erro');
     setSalvando(true);
     try {
-      const atualizado = await api.salvarPerfil({ nome, telefone, foto_url: foto });
+      const atualizado = await api.salvarPerfil({ nome, telefone, foto_url: foto, ...(anfitriao ? pix : {}) });
       avisar('Perfil atualizado.');
       aoSalvar(atualizado);
     } catch (erro) {
@@ -133,6 +141,31 @@ export function ModalPerfil({ perfil, aoFechar, aoSalvar }) {
         <Campo rotulo="E-mail de acesso" dica="O e-mail de login não pode ser alterado aqui.">
           <input value={perfil.email || ''} disabled />
         </Campo>
+
+        {anfitriao && (
+          <>
+            <h3 className="secao-formulario">Receber aluguel por Pix</h3>
+            <p className="texto-suave pequeno">Aparece no portal do inquilino, com o botão "Copiar chave".</p>
+            <div className="grade-formulario">
+              <Campo rotulo="Tipo de chave">
+                <select value={pix.pix_tipo} onChange={mudaPix('pix_tipo')}>
+                  {['CPF', 'CNPJ', 'E-mail', 'Telefone', 'Chave aleatória'].map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </Campo>
+              <Campo rotulo="Chave Pix">
+                <input value={pix.pix_chave} onChange={mudaPix('pix_chave')} maxLength={120} />
+              </Campo>
+              <Campo rotulo="Banco">
+                <input value={pix.pix_banco} onChange={mudaPix('pix_banco')} placeholder="Ex.: Nubank" maxLength={120} />
+              </Campo>
+              <Campo rotulo="Nome do favorecido">
+                <input value={pix.pix_favorecido} onChange={mudaPix('pix_favorecido')} placeholder="Como aparece no Pix" maxLength={120} />
+              </Campo>
+            </div>
+          </>
+        )}
 
         <div className="modal-acoes">
           <button type="button" className="botao botao-secundario" onClick={aoFechar}>

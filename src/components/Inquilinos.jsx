@@ -14,12 +14,13 @@ import {
   estaEncerrada,
   linkWhatsApp,
   moeda,
+  nomeMes,
   primeiroNome,
   semAcento,
 } from '../utils';
-import { HistoricoPagamentos, ModalPagamento } from './Pagamentos';
+import { HistoricoPagamentos, ModalConferirPagamento, ModalPagamento } from './Pagamentos';
 
-export default function Inquilinos({ inquilinos, imoveis = [], contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
+export default function Inquilinos({ inquilinos, imoveis = [], informes = [], contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
   // Contratos com o status de pagamento calculado pelos pagamentos registrados
   const contratos = useMemo(() => analisarContratos(contratosBrutos, pagamentos, regras), [contratosBrutos, pagamentos, regras]);
   const [busca, setBusca] = useState('');
@@ -35,6 +36,7 @@ export default function Inquilinos({ inquilinos, imoveis = [], contratos: contra
         solicitacoes={solicitacoes.filter((s) => s.contratos?.inquilino_id === aberto.id)}
         regras={regras}
         imoveis={imoveis}
+        informes={informes}
         recarregar={recarregar}
         voltar={() => abrir(null)}
       />
@@ -140,7 +142,8 @@ function idade(dataNascimento) {
   return anos;
 }
 
-function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, imoveis, recarregar, voltar }) {
+function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, imoveis, informes = [], recarregar, voltar }) {
+  const [conferindo, setConferindo] = useState(null);
   const { avisar, confirmar } = useUI();
   const [editando, setEditando] = useState(false);
   const [novoContrato, setNovoContrato] = useState(false);
@@ -192,7 +195,6 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           <span className="avatar avatar-grande">{iniciais(inquilino.nome)}</span>
           <div>
             <h1>{inquilino.nome}</h1>
-            <p className="texto-suave">Cadastrado em {dataBR(inquilino.criado_em)}</p>
           </div>
         </div>
         <div className="botoes">
@@ -211,7 +213,19 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         solicitacoes={solicitacoes}
         aoPagar={setPagando}
         aoAbrirSolicitacao={setAbertaId}
+        informes={informes.filter((i) => contratos.some((c) => c.id === i.contrato_id))}
+        aoConferir={setConferindo}
       />
+      {conferindo && (
+        <ModalConferirPagamento
+          informe={conferindo}
+          aoFechar={() => setConferindo(null)}
+          aoSalvar={() => {
+            setConferindo(null);
+            recarregar();
+          }}
+        />
+      )}
 
       <ComunicadosDoInquilino inquilino={inquilino} />
 
@@ -226,6 +240,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
               </div>
             ))}
           </dl>
+          <p className="sub pequeno">Cadastrado em {dataBR(inquilino.criado_em)}</p>
           {comprometimento !== null && (
             <p className={`comprometimento ${comprometimento > 30 ? 'alto' : ''}`}>
               O aluguel compromete <strong>{comprometimento}%</strong> da renda informada
@@ -359,7 +374,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
 }
 
 // Resumo no topo da ficha: o que precisa de atenção com este inquilino, já com o botão para resolver.
-function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirSolicitacao }) {
+function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirSolicitacao, informes = [], aoConferir }) {
   const ativos = contratos.filter((c) => c.situacao.tipo !== 'encerrado');
   const abertas = solicitacoes.filter((s) => !estaEncerrada(s));
   const totalAtraso = contratos.reduce((s, c) => s + (c.atraso?.total || 0), 0);
@@ -380,6 +395,18 @@ function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirS
   const parcela = principal?.parcela;
 
   const pontos = [];
+  for (const i of informes) {
+    pontos.push({
+      cor: 'azul',
+      titulo: 'Pagamento informado, aguardando sua conferência',
+      texto: `${nomeMes(i.referencia)} · ${moeda(i.valor)} · ${i.forma} · pago em ${dataBR(i.data_pagamento)}`,
+      acoes: (
+        <button className="botao botao-pequeno botao-primario" onClick={() => aoConferir(i)}>
+          Conferir
+        </button>
+      ),
+    });
+  }
   for (const c of contratos) {
     if (c.atraso) {
       const texto = `Olá, ${primeiroNome(inquilino.nome)}! Tudo bem? Consta em aberto o aluguel de ${c.imovel}: ${moeda(c.atraso.total)} (com multa e juros). Pode me confirmar o pagamento?`;

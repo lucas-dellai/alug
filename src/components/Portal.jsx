@@ -8,7 +8,7 @@ import { Avatar, MenuUsuario, ModalPerfil } from './Perfil';
 import { FormSolicitacao } from './Formularios';
 import DetalheSolicitacao from './DetalheSolicitacao';
 import Documentos from './Documentos';
-import { HistoricoPagamentos } from './Pagamentos';
+import { HistoricoPagamentos, ModalInformarPagamento } from './Pagamentos';
 import { ComunicadosDoPortal } from './Comunicados';
 import {
   analisarContratos,
@@ -19,6 +19,7 @@ import {
   primeiroNome,
   saudacao,
   dataPorExtenso,
+  nomeMes,
 } from '../utils';
 
 export default function Portal({ perfil, setPerfil }) {
@@ -29,6 +30,8 @@ export default function Portal({ perfil, setPerfil }) {
   const [regras, setRegras] = useState(undefined);
   const [comunicados, setComunicados] = useState([]);
   const [imoveis, setImoveis] = useState([]);
+  const [informes, setInformes] = useState([]);
+  const [informando, setInformando] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
   const [abertaId, setAbertaId] = useState(null);
@@ -36,14 +39,16 @@ export default function Portal({ perfil, setPerfil }) {
 
   const recarregar = useCallback(async () => {
     try {
-      const [c, s, p, r, com, im] = await Promise.all([
+      const [c, s, p, r, com, im, inf] = await Promise.all([
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
         api.listar('configuracoes').catch(() => undefined),
         api.listar('comunicados').catch(() => []),
         api.listar('imoveis').catch(() => []),
+        api.listar('informes').catch(() => []),
       ]);
+      setInformes(inf);
       setRegras(r);
       setComunicados(com);
       setImoveis(im);
@@ -146,6 +151,12 @@ export default function Portal({ perfil, setPerfil }) {
                       </p>
                     </>
                   )}
+                  <AvisoPagamentoInformado
+                    contrato={c}
+                    informes={informes.filter((i) => i.contrato_id === c.id)}
+                    anfitriao={anfitriao}
+                    aoInformar={() => setInformando(c)}
+                  />
                 </section>
 
                 {/* Contrato e imóvel: tudo o que é importante saber do aluguel */}
@@ -224,6 +235,16 @@ export default function Portal({ perfil, setPerfil }) {
 
       <footer className="rodape">{APP.nome} · Portal do Inquilino</footer>
 
+      {informando && (
+        <ModalInformarPagamento
+          contrato={informando}
+          aoFechar={() => setInformando(null)}
+          aoSalvar={() => {
+            setInformando(null);
+            recarregar();
+          }}
+        />
+      )}
       {novaSolicitacao && (
         <FormSolicitacao
           modoInquilino
@@ -338,5 +359,85 @@ function InfoAluguel({ contrato: c, imovel, regras }) {
       </dl>
       {imovel?.descricao && <p className="sub">{imovel.descricao}</p>}
     </section>
+  );
+}
+
+// Botão "Realizei o pagamento" e a situação do que o inquilino já informou
+function AvisoPagamentoInformado({ contrato, informes, anfitriao, aoInformar }) {
+  const aguardando = informes.find((i) => i.status === 'Aguardando');
+  const ultimo = informes[0];
+  const mesesAbertos = contrato.pagamento.emAberto.map((d) => d.toISOString().slice(0, 7));
+  const recusado =
+    ultimo?.status === 'Recusado' && mesesAbertos.includes(String(ultimo.referencia).slice(0, 7)) ? ultimo : null;
+  const confirmadoRecente =
+    ultimo?.status === 'Confirmado' && Date.now() - new Date(ultimo.analisado_em).getTime() < 7 * 86400000 ? ultimo : null;
+
+  return (
+    <div className="pagamento-informar">
+      {aguardando && (
+        <p className="aviso-pagamento aviso-analise">
+          <strong>⏳ Pagamento informado, aguardando conferência</strong>
+          <span>
+            {nomeMes(aguardando.referencia)} · {moeda(aguardando.valor)} · enviado em {new Date(aguardando.criado_em).toLocaleDateString('pt-BR')}
+          </span>
+        </p>
+      )}
+      {recusado && !aguardando && (
+        <p className="aviso-pagamento aviso-recusado">
+          <strong>✕ O anfitrião não confirmou o pagamento de {nomeMes(recusado.referencia).toLowerCase()}</strong>
+          <span>“{recusado.motivo_recusa}”</span>
+        </p>
+      )}
+      {confirmadoRecente && !aguardando && !recusado && (
+        <p className="aviso-pagamento aviso-confirmado">
+          <strong>✓ Pagamento de {nomeMes(confirmadoRecente.referencia).toLowerCase()} confirmado</strong>
+        </p>
+      )}
+      {!aguardando && contrato.status_pagamento === 'Pendente' && !contrato.atraso && contrato.vencimento.dias <= 5 && (
+        <p className="aviso-pagamento aviso-lembrete">
+          <strong>⏰ {contrato.vencimento.dias === 0 ? 'Seu aluguel vence hoje' : `Seu aluguel vence em ${contrato.vencimento.dias} dia(s)`}</strong>
+        </p>
+      )}
+      {!aguardando && contrato.status_pagamento !== 'Em dia' && anfitriao?.pix_chave && <CaixaPix anfitriao={anfitriao} />}
+      {!aguardando && contrato.situacao.tipo !== 'encerrado' && (
+        <button className="botao botao-primario botao-largo" onClick={aoInformar}>
+          Realizei o pagamento
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Chave Pix do anfitrião com botão de copiar
+function CaixaPix({ anfitriao }) {
+  const [copiado, setCopiado] = useState(false);
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(anfitriao.pix_chave);
+    } catch {
+      // Celulares antigos: seleciona o texto para copiar manualmente
+      const campo = document.createElement('textarea');
+      campo.value = anfitriao.pix_chave;
+      document.body.appendChild(campo);
+      campo.select();
+      document.execCommand('copy');
+      campo.remove();
+    }
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
+  }
+  return (
+    <div className="caixa-pix">
+      <div>
+        <span className="texto-suave pequeno">Pague com Pix · {anfitriao.pix_tipo || 'Chave'}</span>
+        <strong className="pix-chave">{anfitriao.pix_chave}</strong>
+        {(anfitriao.pix_favorecido || anfitriao.pix_banco) && (
+          <span className="sub">{[anfitriao.pix_favorecido, anfitriao.pix_banco].filter(Boolean).join(' · ')}</span>
+        )}
+      </div>
+      <button type="button" className={`botao botao-pequeno ${copiado ? 'botao-sucesso' : 'botao-secundario'}`} onClick={copiar}>
+        {copiado ? '✓ Copiada' : 'Copiar chave'}
+      </button>
+    </div>
   );
 }
