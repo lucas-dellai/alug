@@ -4507,3 +4507,90 @@ h2,
   font-size: 12px;
   font-weight: 600;
 }
+
+/* ================= Portal do inquilino em abas ================= */
+@media (max-width: 760px) {
+  .nav-inferior.nav-inferior-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.aba-contador-neutro {
+  background: var(--suave);
+}
+
+.faixa-pendencia {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #f3c77a;
+  background: #fff8ea;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.faixa-pendencia > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.faixa-pendencia-icone {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f0a52b;
+  color: #fff;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.faixa-pendencia:hover {
+  border-color: #f0a52b;
+}
+
+.dados.dados-compactos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 4px 0 10px;
+}
+
+.atalhos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.atalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--borda);
+  background: var(--branco);
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.atalho svg {
+  color: var(--primaria);
+  flex-shrink: 0;
+}
+
+.atalho:hover {
+  border-color: var(--primaria);
+  background: var(--primaria-clara);
+}
