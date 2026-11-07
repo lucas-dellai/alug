@@ -42,7 +42,7 @@ function percentual(valor, rotulo) {
 }
 
 // Seções da ficha do inquilino que podem ser escondidas
-const SECOES_FICHA = ['resumo', 'comunicados', 'dados', 'adicionais', 'documentos', 'acesso', 'contratos', 'solicitacoes'];
+const SECOES_FICHA = ['resumo', 'comunicados', 'advertencias', 'dados', 'adicionais', 'documentos', 'acesso', 'contratos', 'solicitacoes'];
 const TIPOS_CAMPO = ['texto', 'numero', 'data', 'sim_nao', 'anexo'];
 
 function validarFicha(corpo) {

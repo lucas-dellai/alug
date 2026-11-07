@@ -7,8 +7,9 @@ import imoveis from './_lib/recursos/imoveis.js';
 import comunicados from './_lib/recursos/comunicados.js';
 import informes from './_lib/recursos/informes.js';
 import extras from './_lib/recursos/extras.js';
+import advertencias from './_lib/recursos/advertencias.js';
 
-const RECURSOS = { custos, anexos, mensagens, imoveis, comunicados, informes, extras };
+const RECURSOS = { custos, anexos, mensagens, imoveis, comunicados, informes, extras, advertencias };
 
 export default async function handler(req, res) {
   const tratar = RECURSOS[req.query.recurso];
