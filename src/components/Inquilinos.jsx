@@ -39,6 +39,7 @@ export default function Inquilinos({ inquilinos, imoveis = [], informes = [], co
         solicitacoes={solicitacoes.filter((s) => s.contratos?.inquilino_id === aberto.id)}
         regras={regras}
         imoveis={imoveis}
+        ocupados={new Set(contratos.filter((c) => c.imovel_id && c.situacao.tipo !== 'encerrado').map((c) => c.imovel_id))}
         informes={informes}
         recarregar={recarregar}
         voltar={() => abrir(null)}
@@ -145,7 +146,7 @@ function idade(dataNascimento) {
   return anos;
 }
 
-function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, imoveis, informes = [], recarregar, voltar }) {
+function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, imoveis, ocupados, informes = [], recarregar, voltar }) {
   const [conferindo, setConferindo] = useState(null);
   const { avisar, confirmar } = useUI();
   const [editando, setEditando] = useState(false);
@@ -258,6 +259,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         aoAbrirSolicitacao={setAbertaId}
         informes={informes.filter((i) => contratos.some((c) => c.id === i.contrato_id))}
         aoConferir={setConferindo}
+        aoVincular={() => setNovoContrato(true)}
       />
       )}
       {conferindo && (
@@ -324,7 +326,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         <div className="cartao-topo">
           <h2>Contratos</h2>
           <button className="botao botao-pequeno botao-secundario" onClick={() => setNovoContrato(true)}>
-            + Novo contrato
+            + Vincular a um aluguel
           </button>
         </div>
         {!contratos.length ? (
@@ -434,6 +436,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           inquilinos={inquilinos}
           imoveis={imoveis}
           regras={regras}
+          ocupados={ocupados}
           inquilinoFixo={inquilino.id}
           aoFechar={() => setNovoContrato(false)}
           aoSalvar={() => {
@@ -447,7 +450,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
 }
 
 // Resumo no topo da ficha: o que precisa de atenção com este inquilino, já com o botão para resolver.
-function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirSolicitacao, informes = [], aoConferir }) {
+function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirSolicitacao, informes = [], aoConferir, aoVincular }) {
   const ativos = contratos.filter((c) => c.situacao.tipo !== 'encerrado');
   const abertas = solicitacoes.filter((s) => !estaEncerrada(s));
   const totalAtraso = contratos.reduce((s, c) => s + (c.atraso?.total || 0), 0);
@@ -468,6 +471,18 @@ function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirS
   const parcela = principal?.parcela;
 
   const pontos = [];
+  if (!ativos.length) {
+    pontos.push({
+      cor: 'azul',
+      titulo: contratos.length ? 'Sem aluguel ativo no momento' : 'Ainda não está vinculado a nenhum aluguel',
+      texto: 'Escolha o imóvel, o valor e a duração para criar o contrato.',
+      acoes: (
+        <button className="botao botao-pequeno botao-primario" onClick={aoVincular}>
+          Vincular a um aluguel
+        </button>
+      ),
+    });
+  }
   for (const i of informes) {
     pontos.push({
       cor: 'azul',

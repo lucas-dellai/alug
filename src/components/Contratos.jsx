@@ -242,6 +242,7 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
           contrato={formulario.contrato}
           inquilinos={inquilinos}
           imoveis={imoveis}
+          ocupados={new Set(lista.filter((c) => c.imovel_id && c.situacao.tipo !== 'encerrado').map((c) => c.imovel_id))}
           regras={regras}
           aoFechar={() => setFormulario(null)}
           aoSalvar={() => {

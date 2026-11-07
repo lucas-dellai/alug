@@ -131,7 +131,22 @@ export function FormInquilino({ inquilino, aoFechar, aoSalvar }) {
 
 // ---------------- CONTRATO ----------------
 
-export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = [], imovelFixo, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
+const DURACOES = [3, 6, 12, 24];
+
+// Meses inteiros entre duas datas ISO (null se não bater um número exato de meses)
+function mesesEntre(inicio, fim) {
+  if (!inicio || !fim) return null;
+  const [a1, m1, d1] = inicio.split('-').map(Number);
+  const [a2, m2, d2] = fim.split('-').map(Number);
+  return d1 === d2 ? (a2 - a1) * 12 + (m2 - m1) : null;
+}
+
+function somarMeses(inicio, meses) {
+  const [a, m, d] = inicio.split('-').map(Number);
+  return paraISO(new Date(a, m - 1 + Number(meses), d));
+}
+
+export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = [], imovelFixo, ocupados, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
   const { avisar } = useUI();
   const [salvando, setSalvando] = useState(false);
   const [v, alterar, setV] = useFormulario({
@@ -149,6 +164,16 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = []
     juros_mes: contrato?.juros_mes ?? (regras?.juros_padrao ?? 1),
     observacoes: contrato?.observacoes || '',
   });
+  // Duração escolhida: 3, 6, 12, 24 meses ou "personalizado" (o fim é escolhido à mão)
+  const [duracao, setDuracao] = useState(() => {
+    const atual = contrato ? mesesEntre(contrato.data_inicio, contrato.data_fim) : Number(regras?.duracao_meses ?? 12);
+    return DURACOES.includes(atual) ? atual : 'personalizado';
+  });
+
+  function escolherDuracao(d) {
+    setDuracao(d);
+    if (d !== 'personalizado' && v.data_inicio) setV((atual) => ({ ...atual, data_fim: somarMeses(atual.data_inicio, d) }));
+  }
 
   function enviar(e) {
     e.preventDefault();
@@ -202,11 +227,14 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = []
                 }}
               >
                 <option value="">Não vincular</option>
-                {imoveis.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nome}
-                  </option>
-                ))}
+                {[...imoveis]
+                  .sort((a, b) => (ocupados?.has(a.id) ? 1 : 0) - (ocupados?.has(b.id) ? 1 : 0))
+                  .map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.nome}
+                      {ocupados?.has(i.id) && String(i.id) !== String(contrato?.imovel_id) ? ' (já alugado)' : ''}
+                    </option>
+                  ))}
               </select>
             </Campo>
           )}
@@ -230,22 +258,33 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = []
           <Campo rotulo="Dia de vencimento" obrigatorio>
             <input type="number" min="1" max="31" value={v.dia_vencimento} onChange={alterar('dia_vencimento')} required />
           </Campo>
+          <Campo rotulo="Duração do contrato" largo>
+            <div className="opcoes-segmento opcoes-duracao" role="radiogroup" aria-label="Duração do contrato">
+              {[...DURACOES, 'personalizado'].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={duracao === d}
+                  className={duracao === d ? 'ativo' : ''}
+                  onClick={() => escolherDuracao(d)}
+                >
+                  {d === 'personalizado' ? 'Personalizado' : `${d} meses`}
+                </button>
+              ))}
+            </div>
+          </Campo>
           <Campo rotulo="Início do contrato" obrigatorio>
             <input
               type="date"
               value={v.data_inicio}
               onChange={(e) => {
                 const inicio = e.target.value;
-                // Contrato novo: o fim já é preenchido com a duração padrão das configurações
-                setV((atual) => {
-                  const novo = { ...atual, data_inicio: inicio };
-                  if (!contrato && inicio && (!atual.data_fim || atual.fimAutomatico)) {
-                    const [a, m, d] = inicio.split('-').map(Number);
-                    novo.data_fim = paraISO(new Date(a, m - 1 + Number(regras?.duracao_meses ?? 12), d));
-                    novo.fimAutomatico = true;
-                  }
-                  return novo;
-                });
+                setV((atual) => ({
+                  ...atual,
+                  data_inicio: inicio,
+                  data_fim: inicio && duracao !== 'personalizado' ? somarMeses(inicio, duracao) : atual.data_fim,
+                }));
               }}
               required
             />
@@ -254,7 +293,12 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = []
             <input
               type="date"
               value={v.data_fim}
-              onChange={(e) => setV((atual) => ({ ...atual, data_fim: e.target.value, fimAutomatico: false }))}
+              onChange={(e) => {
+                const fim = e.target.value;
+                setV((atual) => ({ ...atual, data_fim: fim }));
+                const meses = mesesEntre(v.data_inicio, fim);
+                setDuracao(DURACOES.includes(meses) ? meses : 'personalizado');
+              }}
               min={v.data_inicio || undefined}
               required
             />
