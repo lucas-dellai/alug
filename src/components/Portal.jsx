@@ -23,6 +23,23 @@ import {
   nomeMes,
 } from '../utils';
 
+const FINALIZADAS = ['Concluída', 'Recusada'];
+
+const PORTAL_ABAS = [
+  { id: 'inicio', rotulo: 'Início', icone: 'M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
+  { id: 'aluguel', rotulo: 'Meu aluguel', icone: 'M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm6 1v5h5M9 13h7M9 17h5' },
+  { id: 'solicitacoes', rotulo: 'Solicitações', icone: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z' },
+  { id: 'avisos', rotulo: 'Avisos', icone: 'M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0' },
+];
+
+function Icone({ caminho }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={caminho} />
+    </svg>
+  );
+}
+
 export default function Portal({ perfil, setPerfil }) {
   const { avisar } = useUI();
   const [contratos, setContratos] = useState([]);
@@ -38,6 +55,7 @@ export default function Portal({ perfil, setPerfil }) {
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
   const [abertaId, setAbertaId] = useState(null);
   const [editandoPerfil, setEditandoPerfil] = useState(false);
+  const [aba, setAba] = useState('inicio');
 
   const recarregar = useCallback(async () => {
     try {
@@ -74,6 +92,38 @@ export default function Portal({ perfil, setPerfil }) {
   const anfitriao = perfil.anfitriao;
   const whatsapp = linkWhatsApp(anfitriao?.telefone);
 
+  const avisosPendentes =
+    advertencias.filter((a) => !a.resposta).length + comunicados.filter((c) => c.pede_resposta && !c.resposta).length;
+  const solicitacoesAbertas = solicitacoes.filter((s) => !FINALIZADAS.includes(s.status));
+
+  function irPara(id) {
+    setAba(id);
+    window.scrollTo(0, 0);
+  }
+
+  const botoesAbas = (classe) =>
+    PORTAL_ABAS.map((a) => (
+      <button
+        key={a.id}
+        className={`${classe} ${aba === a.id ? `${classe}-ativa` : ''}`}
+        onClick={() => irPara(a.id)}
+        aria-current={aba === a.id ? 'page' : undefined}
+      >
+        <Icone caminho={a.icone} />
+        <span>{a.rotulo}</span>
+        {a.id === 'avisos' && avisosPendentes > 0 && <span className="aba-contador">{avisosPendentes}</span>}
+        {a.id === 'solicitacoes' && solicitacoesAbertas.length > 0 && (
+          <span className="aba-contador aba-contador-neutro">{solicitacoesAbertas.length}</span>
+        )}
+      </button>
+    ));
+
+  const semContrato = (
+    <section className="cartao">
+      <Vazio titulo="Nenhum contrato encontrado" texto="Fale com o anfitrião se achar que isso é um erro." />
+    </section>
+  );
+
   return (
     <div className="app">
       <header className="cabecalho">
@@ -85,6 +135,9 @@ export default function Portal({ perfil, setPerfil }) {
               <span>Portal do Inquilino</span>
             </div>
           </div>
+          <nav className="abas" aria-label="Seções">
+            {botoesAbas('aba')}
+          </nav>
           <MenuUsuario perfil={perfil} rotuloPapel="Inquilino" aoEditarPerfil={() => setEditandoPerfil(true)} />
         </div>
       </header>
@@ -94,148 +147,169 @@ export default function Portal({ perfil, setPerfil }) {
           <Carregando texto="Buscando seu contrato…" />
         ) : (
           <div className="pagina">
-            <div>
-              <h1>
-                {saudacao()}, {primeiroNome(perfil.nome)}!
-              </h1>
-            </div>
-
-            <AdvertenciasDoPortal advertencias={advertencias} recarregar={recarregar} />
-            <ComunicadosDoPortal comunicados={comunicados} recarregar={recarregar} />
-
-            {!lista.length && (
-              <section className="cartao">
-                <Vazio titulo="Nenhum contrato encontrado" texto="Fale com o anfitrião se achar que isso é um erro." />
-              </section>
-            )}
-
-            {lista.map((c) => (
-              <div key={c.id} className="portal-grade">
-                {/* Pagamento */}
-                <section className={`cartao portal-pagamento pagamento-${c.status_pagamento === 'Em dia' ? 'ok' : c.status_pagamento === 'Atrasado' ? 'atrasado' : 'pendente'}`}>
-                  <span className="texto-suave">
-                    Pagamento do mês
-                    {c.parcela && <em className="parcela" title={`Parcela ${c.parcela.numero} de ${c.parcela.total}`}>{c.parcela.texto}</em>}
-                  </span>
-                  {c.atraso ? (
-                    <>
-                      <strong className="portal-valor">{moeda(c.atraso.total)}</strong>
-                      <Etiqueta valor="Atrasado">
-                        {c.atraso.quantidade > 1 ? `${c.atraso.quantidade} meses em aberto` : `Atrasado há ${c.atraso.dias} dia(s)`}
-                      </Etiqueta>
-                      <dl className="portal-conta">
-                        <div>
-                          <dt>Aluguel{c.atraso.quantidade > 1 ? ` (${c.atraso.quantidade} meses)` : ''}</dt>
-                          <dd>{moeda(c.atraso.valor)}</dd>
-                        </div>
-                        <div>
-                          <dt>Multa ({Number(c.multa_atraso)}%)</dt>
-                          <dd>{moeda(c.atraso.multa)}</dd>
-                        </div>
-                        <div>
-                          <dt>Juros ({Number(c.juros_mes)}% ao mês)</dt>
-                          <dd>{moeda(c.atraso.juros)}</dd>
-                        </div>
-                      </dl>
-                    </>
-                  ) : (
-                    <>
-                      <strong className="portal-valor">{moeda(c.valor_aluguel)}</strong>
-                      <Etiqueta valor={c.status_pagamento}>
-                        {c.status_pagamento === 'Em dia' ? 'Pagamento em dia' : 'Pagamento pendente'}
-                      </Etiqueta>
-                      {c.pagamento.ultimo && (
-                        <p className="texto-suave">Último pagamento: {dataBR(c.pagamento.ultimo.data_pagamento)}</p>
-                      )}
-                      <p className="texto-suave">
-                        Próximo vencimento: <strong>{dataBR(c.vencimento.data)}</strong>
-                        {c.vencimento.dias === 0 ? ' (hoje)' : ` (em ${c.vencimento.dias} dia(s))`}
-                      </p>
-                    </>
-                  )}
-                  <AvisoPagamentoInformado
-                    contrato={c}
-                    informes={informes.filter((i) => i.contrato_id === c.id)}
-                    anfitriao={anfitriao}
-                    aoInformar={() => setInformando(c)}
-                  />
-                </section>
-
-                {/* Contrato e imóvel: tudo o que é importante saber do aluguel */}
-                <InfoAluguel contrato={c} imovel={imoveis.find((i) => i.id === c.imovel_id)} regras={c.regras} />
-
-                <section className="cartao portal-largura-total">
-                  <h2>Meus pagamentos</h2>
-                  <HistoricoPagamentos contrato={c} somenteLeitura limite={6} />
-                </section>
-              </div>
-            ))}
-
-            <div className="portal-grade">
-              {/* Solicitações */}
-              <section className="cartao">
-                <div className="cartao-topo">
-                  <h2>Minhas solicitações</h2>
-                  {lista.length > 0 && (
-                    <button className="botao botao-primario botao-pequeno" onClick={() => setNovaSolicitacao(true)}>
-                      + Nova solicitação
-                    </button>
+            {/* ===== INÍCIO: só o essencial do mês ===== */}
+            {aba === 'inicio' && (
+              <>
+                <div>
+                  <h1>
+                    {saudacao()}, {primeiroNome(perfil.nome)}!
+                  </h1>
+                  {lista[0] && (
+                    <p className="texto-suave">
+                      {imoveis.find((i) => i.id === lista[0].imovel_id)?.nome || lista[0].imovel}
+                    </p>
                   )}
                 </div>
-                {!solicitacoes.length ? (
-                  <p className="texto-suave">
-                    Precisa de um conserto ou quer pedir algo? Abra uma solicitação e acompanhe por aqui.
-                  </p>
-                ) : (
-                  <ul className="lista-simples lista-clicavel">
-                    {solicitacoes.map((s) => (
-                      <li key={s.id} onClick={() => setAbertaId(s.id)} role="button" tabIndex={0} title="Abrir solicitação">
-                        <div>
-                          <strong>{s.titulo}</strong>
-                          <span className="sub">
-                            {s.tipo} · aberta em {dataBR(s.data_abertura)}
-                            {s.prazo && !['Concluída', 'Recusada'].includes(s.status) ? ` · previsão ${dataBR(s.prazo)}` : ''}
-                          </span>
-                        </div>
-                        <div className="etiquetas">
-                          <Etiqueta valor={s.status} />
-                          <span className="seta-direita">›</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
 
-              <div className="ficha-coluna">
-                {/* Contato do anfitrião */}
-                {anfitriao && (
-                  <section className="cartao contato-anfitriao">
-                    <h2>Seu anfitrião</h2>
-                    <div className="contato">
-                      <Avatar nome={anfitriao.nome} foto={anfitriao.foto_url} tamanho={52} />
-                      <div>
-                        <strong>{anfitriao.nome}</strong>
-                        {anfitriao.telefone && <span className="sub">{anfitriao.telefone}</span>}
-                        {anfitriao.email && <span className="sub">{anfitriao.email}</span>}
-                      </div>
+                {avisosPendentes > 0 && (
+                  <button className="faixa-pendencia" onClick={() => irPara('avisos')}>
+                    <span className="faixa-pendencia-icone" aria-hidden="true">!</span>
+                    <span>
+                      <strong>
+                        {avisosPendentes === 1 ? 'Você tem 1 aviso para responder' : `Você tem ${avisosPendentes} avisos para responder`}
+                      </strong>
+                      <span className="sub">O anfitrião está aguardando sua resposta</span>
+                    </span>
+                    <span className="seta-direita">›</span>
+                  </button>
+                )}
+
+                {!lista.length && semContrato}
+
+                {lista.map((c) => (
+                  <div key={c.id} className="portal-grade">
+                    <CartaoPagamento
+                      contrato={c}
+                      informes={informes.filter((i) => i.contrato_id === c.id)}
+                      anfitriao={anfitriao}
+                      aoInformar={() => setInformando(c)}
+                    />
+                    <ResumoContrato contrato={c} aoVerMais={() => irPara('aluguel')} />
+                  </div>
+                ))}
+
+                <div className="portal-grade">
+                  <section className="cartao">
+                    <div className="cartao-topo">
+                      <h2>Solicitações em andamento</h2>
+                      <button className="link pequeno" onClick={() => irPara('solicitacoes')}>
+                        Ver todas ›
+                      </button>
                     </div>
-                    {whatsapp && (
-                      <a className="botao botao-primario botao-pequeno" href={whatsapp} target="_blank" rel="noreferrer">
-                        Chamar no WhatsApp
-                      </a>
+                    {!solicitacoesAbertas.length ? (
+                      <p className="texto-suave">Nenhuma solicitação em aberto.</p>
+                    ) : (
+                      <ListaSolicitacoes itens={solicitacoesAbertas.slice(0, 3)} abrir={setAbertaId} />
                     )}
                   </section>
-                )}
 
-                <Documentos somenteLeitura />
-              </div>
-            </div>
+                  <section className="cartao">
+                    <h2>Atalhos</h2>
+                    <div className="atalhos">
+                      {lista.length > 0 && (
+                        <button className="atalho" onClick={() => setNovaSolicitacao(true)}>
+                          <Icone caminho="M12 5v14M5 12h14" />
+                          <span>Nova solicitação</span>
+                        </button>
+                      )}
+                      {whatsapp && (
+                        <a className="atalho" href={whatsapp} target="_blank" rel="noreferrer">
+                          <Icone caminho="M21 12a9 9 0 0 1-13.4 7.8L3 21l1.3-4.5A9 9 0 1 1 21 12z" />
+                          <span>Falar com o anfitrião</span>
+                        </a>
+                      )}
+                      <button className="atalho" onClick={() => irPara('aluguel')}>
+                        <Icone caminho="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+                        <span>Regras do imóvel</span>
+                      </button>
+                      <button className="atalho" onClick={() => irPara('aluguel')}>
+                        <Icone caminho="M3 7h18M3 12h18M3 17h12" />
+                        <span>Meus pagamentos</span>
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              </>
+            )}
+
+            {/* ===== MEU ALUGUEL: contrato, imóvel, regras, pagamentos e documentos ===== */}
+            {aba === 'aluguel' && (
+              <>
+                <h1>Meu aluguel</h1>
+                {!lista.length && semContrato}
+                {lista.map((c) => (
+                  <div key={c.id} className="portal-grade">
+                    <InfoAluguel contrato={c} imovel={imoveis.find((i) => i.id === c.imovel_id)} regras={c.regras} />
+                    <div className="ficha-coluna">
+                      <section className="cartao">
+                        <h2>Histórico de pagamentos</h2>
+                        <HistoricoPagamentos contrato={c} somenteLeitura limite={12} />
+                      </section>
+                    </div>
+                  </div>
+                ))}
+                <div className="portal-grade">
+                  <Documentos somenteLeitura />
+                  {anfitriao && (
+                    <section className="cartao contato-anfitriao">
+                      <h2>Seu anfitrião</h2>
+                      <div className="contato">
+                        <Avatar nome={anfitriao.nome} foto={anfitriao.foto_url} tamanho={52} />
+                        <div>
+                          <strong>{anfitriao.nome}</strong>
+                          {anfitriao.telefone && <span className="sub">{anfitriao.telefone}</span>}
+                          {anfitriao.email && <span className="sub">{anfitriao.email}</span>}
+                        </div>
+                      </div>
+                      {whatsapp && (
+                        <a className="botao botao-primario botao-pequeno" href={whatsapp} target="_blank" rel="noreferrer">
+                          Chamar no WhatsApp
+                        </a>
+                      )}
+                    </section>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* ===== SOLICITAÇÕES: abrir e acompanhar ===== */}
+            {aba === 'solicitacoes' && (
+              <AbaSolicitacoes
+                solicitacoes={solicitacoes}
+                podeAbrir={lista.length > 0}
+                aoNova={() => setNovaSolicitacao(true)}
+                abrir={setAbertaId}
+              />
+            )}
+
+            {/* ===== AVISOS: comunicados e advertências ===== */}
+            {aba === 'avisos' && (
+              <>
+                <div>
+                  <h1>Avisos</h1>
+                  <p className="texto-suave">Comunicados e advertências enviados pelo anfitrião.</p>
+                </div>
+                {!comunicados.length && !advertencias.length ? (
+                  <section className="cartao">
+                    <Vazio titulo="Nenhum aviso por aqui" texto="Quando o anfitrião enviar um comunicado, ele aparece nesta aba." />
+                  </section>
+                ) : (
+                  <>
+                    <AdvertenciasDoPortal advertencias={advertencias} recarregar={recarregar} completo />
+                    <ComunicadosDoPortal comunicados={comunicados} recarregar={recarregar} completo />
+                  </>
+                )}
+              </>
+            )}
           </div>
         )}
       </main>
 
       <footer className="rodape">{APP.nome} · Portal do Inquilino</footer>
+
+      <nav className="nav-inferior nav-inferior-4" aria-label="Seções">
+        {botoesAbas('nav-item')}
+      </nav>
 
       {informando && (
         <ModalInformarPagamento
@@ -282,6 +356,168 @@ export default function Portal({ perfil, setPerfil }) {
   );
 }
 
+// Cartão principal do Início: quanto pagar, até quando, e o botão "Realizei o pagamento"
+function CartaoPagamento({ contrato: c, informes, anfitriao, aoInformar }) {
+  const classe = c.status_pagamento === 'Em dia' ? 'ok' : c.status_pagamento === 'Atrasado' ? 'atrasado' : 'pendente';
+  return (
+    <section className={`cartao portal-pagamento pagamento-${classe}`}>
+      <span className="texto-suave">
+        Pagamento do mês
+        {c.parcela && <em className="parcela" title={`Parcela ${c.parcela.numero} de ${c.parcela.total}`}>{c.parcela.texto}</em>}
+      </span>
+      {c.atraso ? (
+        <>
+          <strong className="portal-valor">{moeda(c.atraso.total)}</strong>
+          <Etiqueta valor="Atrasado">
+            {c.atraso.quantidade > 1 ? `${c.atraso.quantidade} meses em aberto` : `Atrasado há ${c.atraso.dias} dia(s)`}
+          </Etiqueta>
+          <dl className="portal-conta">
+            <div>
+              <dt>Aluguel{c.atraso.quantidade > 1 ? ` (${c.atraso.quantidade} meses)` : ''}</dt>
+              <dd>{moeda(c.atraso.valor)}</dd>
+            </div>
+            <div>
+              <dt>Multa ({Number(c.multa_atraso)}%)</dt>
+              <dd>{moeda(c.atraso.multa)}</dd>
+            </div>
+            <div>
+              <dt>Juros ({Number(c.juros_mes)}% ao mês)</dt>
+              <dd>{moeda(c.atraso.juros)}</dd>
+            </div>
+          </dl>
+        </>
+      ) : (
+        <>
+          <strong className="portal-valor">{moeda(c.valor_aluguel)}</strong>
+          <Etiqueta valor={c.status_pagamento}>
+            {c.status_pagamento === 'Em dia' ? 'Pagamento em dia' : 'Pagamento pendente'}
+          </Etiqueta>
+          <p className="texto-suave">
+            Próximo vencimento: <strong>{dataBR(c.vencimento.data)}</strong>
+            {c.vencimento.dias === 0 ? ' (hoje)' : ` (em ${c.vencimento.dias} dia(s))`}
+          </p>
+        </>
+      )}
+      <AvisoPagamentoInformado contrato={c} informes={informes} anfitriao={anfitriao} aoInformar={aoInformar} />
+    </section>
+  );
+}
+
+// Resumo curto do contrato no Início, com atalho para a aba "Meu aluguel"
+function ResumoContrato({ contrato: c, aoVerMais }) {
+  return (
+    <section className="cartao">
+      <div className="cartao-topo">
+        <h2>Meu contrato</h2>
+        <button className="link pequeno" onClick={aoVerMais}>
+          Ver detalhes ›
+        </button>
+      </div>
+      <dl className="dados dados-compactos">
+        <div>
+          <dt>Parcela</dt>
+          <dd>{c.parcela ? `${c.parcela.numero} de ${c.parcela.total}` : '—'}</dd>
+        </div>
+        <div>
+          <dt>Vencimento</dt>
+          <dd>Todo dia {c.dia_vencimento}</dd>
+        </div>
+        <div>
+          <dt>Contrato até</dt>
+          <dd>{dataBR(c.data_fim)}</dd>
+        </div>
+        <div>
+          <dt>Situação</dt>
+          <dd>
+            <Etiqueta valor={c.situacao.tipo}>{c.situacao.texto}</Etiqueta>
+          </dd>
+        </div>
+      </dl>
+      {c.pagamento.ultimo && (
+        <p className="texto-suave pequeno">
+          Último pagamento registrado: {dataBR(c.pagamento.ultimo.data_pagamento)} · {moeda(c.pagamento.ultimo.valor_pago)}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function ListaSolicitacoes({ itens, abrir }) {
+  return (
+    <ul className="lista-simples lista-clicavel">
+      {itens.map((s) => (
+        <li key={s.id} onClick={() => abrir(s.id)} role="button" tabIndex={0} title="Abrir solicitação">
+          <div>
+            <strong>{s.titulo}</strong>
+            <span className="sub">
+              {s.tipo} · aberta em {dataBR(s.data_abertura)}
+              {s.prazo && !FINALIZADAS.includes(s.status) ? ` · previsão ${dataBR(s.prazo)}` : ''}
+            </span>
+          </div>
+          <div className="etiquetas">
+            <Etiqueta valor={s.status} />
+            <span className="seta-direita">›</span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Aba de solicitações: abrir uma nova e acompanhar as anteriores por situação
+function AbaSolicitacoes({ solicitacoes, podeAbrir, aoNova, abrir }) {
+  const abertas = solicitacoes.filter((s) => !FINALIZADAS.includes(s.status));
+  const finalizadas = solicitacoes.filter((s) => FINALIZADAS.includes(s.status));
+  const [filtro, setFiltro] = useState(abertas.length || !finalizadas.length ? 'abertas' : 'finalizadas');
+  const FILTROS = [
+    { id: 'abertas', rotulo: 'Em andamento', itens: abertas },
+    { id: 'finalizadas', rotulo: 'Finalizadas', itens: finalizadas },
+    { id: 'todas', rotulo: 'Todas', itens: solicitacoes },
+  ];
+  const atual = FILTROS.find((f) => f.id === filtro);
+
+  return (
+    <>
+      <div className="pagina-topo">
+        <div>
+          <h1>Solicitações</h1>
+          <p className="texto-suave">Peça consertos, manutenções ou o que precisar e acompanhe a resposta.</p>
+        </div>
+        {podeAbrir && (
+          <button className="botao botao-primario" onClick={aoNova}>
+            + Nova solicitação
+          </button>
+        )}
+      </div>
+
+      <div className="filtro-chips" role="tablist" aria-label="Situação">
+        {FILTROS.map((f) => (
+          <button
+            key={f.id}
+            role="tab"
+            aria-selected={filtro === f.id}
+            className={`chip ${filtro === f.id ? 'chip-ativo' : ''}`}
+            onClick={() => setFiltro(f.id)}
+          >
+            {f.rotulo} <span className="chip-numero">{f.itens.length}</span>
+          </button>
+        ))}
+      </div>
+
+      <section className="cartao">
+        {!atual.itens.length ? (
+          <Vazio
+            titulo={filtro === 'finalizadas' ? 'Nenhuma solicitação finalizada' : 'Nenhuma solicitação em andamento'}
+            texto={podeAbrir ? 'Precisa de algo? Toque em "+ Nova solicitação".' : ''}
+          />
+        ) : (
+          <ListaSolicitacoes itens={atual.itens} abrir={abrir} />
+        )}
+      </section>
+    </>
+  );
+}
+
 // Informações do aluguel para o inquilino: imóvel, o que está incluso, datas e regras de cobrança
 function InfoAluguel({ contrato: c, imovel, regras }) {
   const specs = especificacoes(imovel);
@@ -289,7 +525,7 @@ function InfoAluguel({ contrato: c, imovel, regras }) {
   return (
     <section className="cartao info-aluguel">
       {imovel?.foto_url && <img className="info-aluguel-foto" src={imovel.foto_url} alt={`Foto de ${imovel.nome}`} />}
-      <h2>Meu aluguel</h2>
+      <h2>Imóvel e contrato</h2>
       <p className="info-aluguel-imovel">
         <strong>{imovel?.nome || c.imovel}</strong>
         <span className="sub">{imovel ? `${imovel.tipo} · ${imovel.endereco}` : ''}</span>

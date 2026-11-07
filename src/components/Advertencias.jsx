@@ -210,7 +210,7 @@ function FormAdvertencia({ inquilino, aoFechar, aoSalvar }) {
 }
 
 // ---------- Portal do inquilino ----------
-export function AdvertenciasDoPortal({ advertencias, recarregar }) {
+export function AdvertenciasDoPortal({ advertencias, recarregar, completo = false }) {
   const { avisar } = useUI();
   const [contestando, setContestando] = useState(null);
   const [comentario, setComentario] = useState('');
@@ -238,16 +238,17 @@ export function AdvertenciasDoPortal({ advertencias, recarregar }) {
   }
 
   const pendentes = advertencias.filter((a) => !a.resposta);
-  if (!pendentes.length) return null;
+  const visiveis = completo ? [...pendentes, ...advertencias.filter((a) => a.resposta)] : pendentes;
+  if (!visiveis.length) return null;
 
   return (
-    <section className="cartao portal-comunicados com-pendencia portal-advertencias">
+    <section className={`cartao portal-comunicados portal-advertencias ${pendentes.length ? 'com-pendencia' : ''}`}>
       <h2>
-        Advertências <span className="contador">{pendentes.length} para responder</span>
+        Advertências {pendentes.length > 0 && <span className="contador">{pendentes.length} para responder</span>}
       </h2>
       <ul className="lista-comunicados">
-        {pendentes.map((a) => (
-          <li key={a.id} className="comunicado-pendente advertencia-pendente">
+        {visiveis.map((a) => (
+          <li key={a.id} className={a.resposta ? '' : 'comunicado-pendente advertencia-pendente'}>
             <div className="comunicado-topo">
               <div>
                 <span className="comunicado-tipo tipo-advertencia">Advertência · {a.motivo}</span>
@@ -261,14 +262,22 @@ export function AdvertenciasDoPortal({ advertencias, recarregar }) {
                 <strong>Multa: {moeda(a.multa_valor)}</strong>
               </p>
             )}
-            <div className="comunicado-acoes">
-              <button className="botao botao-sucesso" disabled={enviando === a.id} onClick={() => responder(a, 'Aceita')}>
-                ✓ Aceito
-              </button>
-              <button className="botao botao-perigo-leve" disabled={enviando === a.id} onClick={() => setContestando(a)}>
-                ✕ Não concordo
-              </button>
-            </div>
+            {a.resposta ? (
+              <p className={`comunicado-resposta resposta-${a.resposta === 'Aceita' ? 'sim' : 'nao'}`}>
+                <strong>{a.resposta === 'Aceita' ? 'Você aceitou' : 'Você não concordou'}</strong>
+                {a.respondido_em && <> em {dataHoraBR(a.respondido_em)}</>}
+                {a.resposta_comentario && <>: “{a.resposta_comentario}”</>}
+              </p>
+            ) : (
+              <div className="comunicado-acoes">
+                <button className="botao botao-sucesso" disabled={enviando === a.id} onClick={() => responder(a, 'Aceita')}>
+                  ✓ Aceito
+                </button>
+                <button className="botao botao-perigo-leve" disabled={enviando === a.id} onClick={() => setContestando(a)}>
+                  ✕ Não concordo
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>

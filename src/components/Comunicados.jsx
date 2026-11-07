@@ -201,7 +201,7 @@ function FormComunicado({ inquilino, aoFechar, aoSalvar }) {
 }
 
 // ---------- Lado do inquilino (no topo do portal) ----------
-export function ComunicadosDoPortal({ comunicados, recarregar }) {
+export function ComunicadosDoPortal({ comunicados, recarregar, completo = false }) {
   const { avisar } = useUI();
   const [recusando, setRecusando] = useState(null);
   const [verTodos, setVerTodos] = useState(false);
@@ -234,7 +234,7 @@ export function ComunicadosDoPortal({ comunicados, recarregar }) {
   const novos = comunicados.filter((c) => !c.pede_resposta && !c.lido_em);
   const destaque = [...pendentes, ...novos];
   const demais = comunicados.filter((c) => !destaque.includes(c));
-  const visiveis = verTodos ? [...destaque, ...demais] : destaque.length ? destaque : demais.slice(0, 1);
+  const visiveis = verTodos || completo ? [...destaque, ...demais] : destaque.length ? destaque : demais.slice(0, 1);
 
   return (
     <section className={`cartao portal-comunicados ${pendentes.length ? 'com-pendencia' : ''}`}>
