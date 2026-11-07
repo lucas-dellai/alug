@@ -20,6 +20,7 @@ export default criarCrud({
     'aceita_pet',
     'valor_sugerido',
     'descricao',
+    'regras',
     'incluso',
     'nao_incluso',
     'foto_url',
