@@ -442,6 +442,7 @@ export const ITENS_INCLUSOS_PADRAO = ['Água', 'Luz', 'Gás', 'Internet', 'IPTU'
 export const SECOES_FICHA = [
   { id: 'resumo', rotulo: 'Resumo e pontos de atenção' },
   { id: 'comunicados', rotulo: 'Comunicados' },
+  { id: 'advertencias', rotulo: 'Advertências' },
   { id: 'dados', rotulo: 'Dados pessoais' },
   { id: 'adicionais', rotulo: 'Informações adicionais (seus campos)' },
   { id: 'documentos', rotulo: 'Documentos' },
@@ -457,3 +458,23 @@ export const TIPOS_CAMPO = [
   { id: 'sim_nao', rotulo: 'Sim ou não' },
   { id: 'anexo', rotulo: 'Anexo (PDF ou imagem)' },
 ];
+
+// ---------- Advertências e regras ----------
+export const MOTIVOS_ADVERTENCIA = ['Barulho', 'Atraso de pagamento', 'Danos ao imóvel', 'Regras do imóvel', 'Animais', 'Uso indevido', 'Outro'];
+
+export const SUGESTOES_REGRAS = [
+  'Silêncio das 22h às 8h',
+  'Proibido fumar dentro do imóvel',
+  'Animais só com aviso prévio',
+  'Não é permitido sublocar',
+  'Lixo só nos dias de coleta',
+  'Visitas de pernoite com aviso',
+  'Reformas só com autorização',
+];
+
+// Texto com uma regra por linha vira lista
+export const listaDeRegras = (texto) =>
+  String(texto || '')
+    .split('\n')
+    .map((l) => l.replace(/^[-•*\s]+/, '').trim())
+    .filter(Boolean);

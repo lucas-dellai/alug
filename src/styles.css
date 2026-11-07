@@ -4438,3 +4438,72 @@ h2,
   width: 20px;
   height: 20px;
 }
+
+/* ================= Advertências e regras ================= */
+.opcoes-tipo {
+  margin-bottom: 14px;
+}
+
+.opcoes-tipo button {
+  flex: 1 1 140px;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.opcoes-tipo button small {
+  font-weight: 500;
+  color: var(--suave);
+}
+
+.tipo-advertencia {
+  color: var(--vermelho);
+}
+
+.advertencia-interna {
+  border-style: dashed !important;
+  background: var(--superficie) !important;
+}
+
+.advertencia-pendente {
+  border-left-color: var(--vermelho) !important;
+}
+
+.portal-advertencias.com-pendencia {
+  border-color: #e5978d;
+  box-shadow: 0 0 0 3px var(--vermelho-fundo);
+}
+
+.regras-imovel {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+}
+
+.regras-imovel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.regras-imovel ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+}
+
+.sugestoes-regras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+.chip-pequeno {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
