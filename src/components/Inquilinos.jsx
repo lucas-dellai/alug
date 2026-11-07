@@ -225,18 +225,18 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
           )}
           <div className="ficha-contatos">
             {linkWhatsApp(inquilino.telefone) && (
-              <a className="contato-pilula contato-whatsapp" href={linkWhatsApp(inquilino.telefone)} target="_blank" rel="noreferrer">
-                <Icone nome="conversa" /> WhatsApp
+              <a className="contato-pilula contato-whatsapp" href={linkWhatsApp(inquilino.telefone)} target="_blank" rel="noreferrer" title="WhatsApp" aria-label="WhatsApp">
+                <Icone nome="conversa" />
               </a>
             )}
             {inquilino.telefone && (
-              <a className="contato-pilula" href={`tel:${String(inquilino.telefone).replace(/\D/g, '')}`}>
-                <Icone nome="telefone" /> Ligar
+              <a className="contato-pilula" href={`tel:${String(inquilino.telefone).replace(/\D/g, '')}`} title="Ligar" aria-label="Ligar">
+                <Icone nome="telefone" />
               </a>
             )}
             {inquilino.email && (
-              <a className="contato-pilula" href={`mailto:${inquilino.email}`}>
-                <Icone nome="email" /> E-mail
+              <a className="contato-pilula" href={`mailto:${inquilino.email}`} title="E-mail" aria-label="E-mail">
+                <Icone nome="email" />
               </a>
             )}
             {!inquilino.telefone && !inquilino.email && (
