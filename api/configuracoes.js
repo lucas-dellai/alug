@@ -12,6 +12,8 @@ import {
 } from './_lib/supabase.js';
 
 const PADRAO = {
+  ficha_ocultas: [],
+  campos_personalizados: [],
   cobrar_multa: true,
   multa_padrao: 2,
   cobrar_juros: true,
@@ -38,6 +40,27 @@ function percentual(valor, rotulo) {
   return numero;
 }
 
+// Seções da ficha do inquilino que podem ser escondidas
+const SECOES_FICHA = ['resumo', 'comunicados', 'dados', 'adicionais', 'documentos', 'acesso', 'contratos', 'solicitacoes'];
+const TIPOS_CAMPO = ['texto', 'numero', 'data', 'sim_nao', 'anexo'];
+
+function validarFicha(corpo) {
+  const ocultas = Array.isArray(corpo.ficha_ocultas) ? corpo.ficha_ocultas.filter((s) => SECOES_FICHA.includes(s)) : [];
+  if (!Array.isArray(corpo.campos_personalizados)) throw new ErroApi(400, 'Lista de campos inválida.');
+  if (corpo.campos_personalizados.length > 30) throw new ErroApi(400, 'Use no máximo 30 campos personalizados.');
+  const nomes = new Set();
+  const campos = corpo.campos_personalizados.map((c) => {
+    const nome = String(c?.nome || '').trim().slice(0, 40);
+    if (!nome) throw new ErroApi(400, 'Todo campo personalizado precisa de um nome.');
+    if (nomes.has(nome.toLowerCase())) throw new ErroApi(400, `O campo "${nome}" está repetido.`);
+    nomes.add(nome.toLowerCase());
+    if (!TIPOS_CAMPO.includes(c.tipo)) throw new ErroApi(400, `Tipo inválido no campo "${nome}".`);
+    const id = /^c[a-z0-9]{1,20}$/.test(c.id) ? c.id : `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    return { id, nome, tipo: c.tipo };
+  });
+  return { ficha_ocultas: ocultas, campos_personalizados: campos };
+}
+
 export default rota(async (req, res) => {
   const supabase = criarCliente(req);
   const usuario = await exigirUsuario(supabase, req);
@@ -52,6 +75,15 @@ export default rota(async (req, res) => {
   if (req.method === 'PUT') {
     if (perfil.papel !== 'anfitriao') throw new ErroApi(403, 'Apenas o anfitrião pode alterar as configurações.');
     const corpo = req.body || {};
+
+    // Configuração da ficha do inquilino (seções visíveis e campos personalizados): salva só essa parte
+    if (corpo.somente_ficha) {
+      const ficha = { id: usuario.id, ...validarFicha(corpo), atualizado_em: new Date().toISOString() };
+      const { data, error } = await supabase.from('configuracoes').upsert(ficha, { onConflict: 'id' }).select('*').single();
+      if (error) throw traduzirErroBanco(error);
+      return res.status(200).json({ ...PADRAO, ...data });
+    }
+
     const tolerancia = inteiro(corpo.dias_tolerancia ?? 0, 0, 31, 'A tolerância precisa ser de 0 a 31 dias.');
     const indice = corpo.indice_padrao ?? PADRAO.indice_padrao;
     if (!INDICES.includes(indice)) throw new ErroApi(400, 'Índice de reajuste inválido.');
