@@ -131,13 +131,14 @@ export function FormInquilino({ inquilino, aoFechar, aoSalvar }) {
 
 // ---------------- CONTRATO ----------------
 
-export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
+export function FormContrato({ contrato, inquilinos, inquilinoFixo, imoveis = [], imovelFixo, regras = REGRAS_PADRAO, aoFechar, aoSalvar }) {
   const { avisar } = useUI();
   const [salvando, setSalvando] = useState(false);
   const [v, alterar, setV] = useFormulario({
     inquilino_id: contrato?.inquilino_id ?? inquilinoFixo ?? '',
-    imovel: contrato?.imovel || '',
-    valor_aluguel: contrato?.valor_aluguel ?? '',
+    imovel_id: contrato?.imovel_id ?? imovelFixo?.id ?? '',
+    imovel: contrato?.imovel || imovelFixo?.endereco || '',
+    valor_aluguel: contrato?.valor_aluguel ?? imovelFixo?.valor_sugerido ?? '',
     dia_vencimento: contrato?.dia_vencimento ?? (regras?.dia_vencimento_padrao ?? 10),
     data_inicio: contrato?.data_inicio || '',
     data_fim: contrato?.data_fim || '',
@@ -157,7 +158,12 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REG
     salvarRegistro({
       recurso: 'contratos',
       id: contrato?.id,
-      dados: (({ fimAutomatico, ...resto }) => ({ ...resto, inquilino_id: Number(resto.inquilino_id), dia_vencimento: Number(resto.dia_vencimento) }))(v),
+      dados: (({ fimAutomatico, ...resto }) => ({
+        ...resto,
+        inquilino_id: Number(resto.inquilino_id),
+        imovel_id: resto.imovel_id ? Number(resto.imovel_id) : null,
+        dia_vencimento: Number(resto.dia_vencimento),
+      }))(v),
       avisar,
       aoSalvar,
       setSalvando,
@@ -180,7 +186,31 @@ export function FormContrato({ contrato, inquilinos, inquilinoFixo, regras = REG
               ))}
             </select>
           </Campo>
-          <Campo rotulo="Imóvel (endereço)" obrigatorio>
+          {imoveis.length > 0 && (
+            <Campo rotulo="Imóvel cadastrado" dica="Escolha para preencher o endereço e o valor sugerido">
+              <select
+                value={v.imovel_id}
+                disabled={!!imovelFixo}
+                onChange={(e) => {
+                  const escolhido = imoveis.find((i) => String(i.id) === e.target.value);
+                  setV((atual) => ({
+                    ...atual,
+                    imovel_id: e.target.value,
+                    imovel: escolhido ? escolhido.endereco : atual.imovel,
+                    valor_aluguel: atual.valor_aluguel || escolhido?.valor_sugerido || '',
+                  }));
+                }}
+              >
+                <option value="">Não vincular</option>
+                {imoveis.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.nome}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          )}
+          <Campo rotulo="Endereço do imóvel" obrigatorio>
             <input value={v.imovel} onChange={alterar('imovel')} placeholder="Rua, número, bairro" required />
           </Campo>
           <Campo rotulo="Tipo de garantia">

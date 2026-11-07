@@ -9,7 +9,17 @@ import { FormSolicitacao } from './Formularios';
 import DetalheSolicitacao from './DetalheSolicitacao';
 import Documentos from './Documentos';
 import { HistoricoPagamentos } from './Pagamentos';
-import { analisarContratos, dataBR, linkWhatsApp, moeda, primeiroNome, saudacao, dataPorExtenso } from '../utils';
+import { ComunicadosDoPortal } from './Comunicados';
+import {
+  analisarContratos,
+  dataBR,
+  especificacoes,
+  linkWhatsApp,
+  moeda,
+  primeiroNome,
+  saudacao,
+  dataPorExtenso,
+} from '../utils';
 
 export default function Portal({ perfil, setPerfil }) {
   const { avisar } = useUI();
@@ -17,6 +27,8 @@ export default function Portal({ perfil, setPerfil }) {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
   const [regras, setRegras] = useState(undefined);
+  const [comunicados, setComunicados] = useState([]);
+  const [imoveis, setImoveis] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [novaSolicitacao, setNovaSolicitacao] = useState(false);
   const [abertaId, setAbertaId] = useState(null);
@@ -24,13 +36,17 @@ export default function Portal({ perfil, setPerfil }) {
 
   const recarregar = useCallback(async () => {
     try {
-      const [c, s, p, r] = await Promise.all([
+      const [c, s, p, r, com, im] = await Promise.all([
         api.listar('contratos'),
         api.listar('solicitacoes'),
         api.listar('pagamentos'),
         api.listar('configuracoes').catch(() => undefined),
+        api.listar('comunicados').catch(() => []),
+        api.listar('imoveis').catch(() => []),
       ]);
       setRegras(r);
+      setComunicados(com);
+      setImoveis(im);
       setContratos(c);
       setSolicitacoes(s);
       setPagamentos(p);
@@ -77,6 +93,8 @@ export default function Portal({ perfil, setPerfil }) {
                 {saudacao()}, {primeiroNome(perfil.nome)}!
               </h1>
             </div>
+
+            <ComunicadosDoPortal comunicados={comunicados} recarregar={recarregar} />
 
             {!lista.length && (
               <section className="cartao">
@@ -130,42 +148,8 @@ export default function Portal({ perfil, setPerfil }) {
                   )}
                 </section>
 
-                {/* Contrato */}
-                <section className="cartao">
-                  <h2>Meu contrato</h2>
-                  <dl className="dados">
-                    <div>
-                      <dt>Imóvel</dt>
-                      <dd>{c.imovel}</dd>
-                    </div>
-                    <div>
-                      <dt>Vencimento</dt>
-                      <dd>Todo dia {c.dia_vencimento}</dd>
-                    </div>
-                    <div>
-                      <dt>Período</dt>
-                      <dd>
-                        {dataBR(c.data_inicio)} a {dataBR(c.data_fim)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Situação</dt>
-                      <dd>
-                        <Etiqueta valor={c.situacao.tipo}>{c.situacao.texto}</Etiqueta>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Garantia</dt>
-                      <dd>{c.tipo_garantia}</dd>
-                    </div>
-                    <div>
-                      <dt>Próximo reajuste</dt>
-                      <dd>
-                        {dataBR(c.reajuste.proximo)} ({c.indice_reajuste}){c.reajuste.dias < 0 ? ' · a combinar' : ''}
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
+                {/* Contrato e imóvel: tudo o que é importante saber do aluguel */}
+                <InfoAluguel contrato={c} imovel={imoveis.find((i) => i.id === c.imovel_id)} regras={c.regras} />
 
                 <section className="cartao portal-largura-total">
                   <h2>Meus pagamentos</h2>
@@ -272,5 +256,87 @@ export default function Portal({ perfil, setPerfil }) {
         />
       )}
     </div>
+  );
+}
+
+// Informações do aluguel para o inquilino: imóvel, o que está incluso, datas e regras de cobrança
+function InfoAluguel({ contrato: c, imovel, regras }) {
+  const specs = especificacoes(imovel);
+  const tolerancia = Number(regras?.dias_tolerancia || 0);
+  return (
+    <section className="cartao info-aluguel">
+      {imovel?.foto_url && <img className="info-aluguel-foto" src={imovel.foto_url} alt={`Foto de ${imovel.nome}`} />}
+      <h2>Meu aluguel</h2>
+      <p className="info-aluguel-imovel">
+        <strong>{imovel?.nome || c.imovel}</strong>
+        <span className="sub">{imovel ? `${imovel.tipo} · ${imovel.endereco}` : ''}</span>
+        {specs && <span className="sub">{specs}</span>}
+      </p>
+
+      {(imovel?.incluso?.length > 0 || imovel?.nao_incluso?.length > 0) && (
+        <div className="imovel-inclusos">
+          {imovel.incluso?.length > 0 && (
+            <p>
+              <span className="inclui-sim">✓ Incluso no aluguel:</span> {imovel.incluso.join(', ')}
+            </p>
+          )}
+          {imovel.nao_incluso?.length > 0 && (
+            <p>
+              <span className="inclui-nao">✕ Por sua conta:</span> {imovel.nao_incluso.join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      <dl className="dados">
+        <div>
+          <dt>Valor do aluguel</dt>
+          <dd>{moeda(c.valor_aluguel)}</dd>
+        </div>
+        <div>
+          <dt>Vencimento</dt>
+          <dd>Todo dia {c.dia_vencimento}</dd>
+        </div>
+        <div>
+          <dt>Parcela atual</dt>
+          <dd>{c.parcela ? `${c.parcela.numero} de ${c.parcela.total}` : '—'}</dd>
+        </div>
+        <div>
+          <dt>Contrato</dt>
+          <dd>
+            {dataBR(c.data_inicio)} a {dataBR(c.data_fim)}
+          </dd>
+        </div>
+        <div>
+          <dt>Situação</dt>
+          <dd>
+            <Etiqueta valor={c.situacao.tipo}>{c.situacao.texto}</Etiqueta>
+          </dd>
+        </div>
+        <div>
+          <dt>Próximo reajuste</dt>
+          <dd>
+            {dataBR(c.reajuste.proximo)} ({c.indice_reajuste})
+          </dd>
+        </div>
+        <div>
+          <dt>Garantia</dt>
+          <dd>{c.tipo_garantia}</dd>
+        </div>
+        <div>
+          <dt>Se atrasar</dt>
+          <dd>
+            {[
+              regras?.cobrar_multa !== false && Number(c.multa_atraso) > 0 && `multa de ${Number(c.multa_atraso)}%`,
+              regras?.cobrar_juros !== false && Number(c.juros_mes) > 0 && `juros de ${Number(c.juros_mes)}% ao mês`,
+            ]
+              .filter(Boolean)
+              .join(' + ') || 'sem multa e juros'}
+            {tolerancia > 0 && ` (após ${tolerancia} dia${tolerancia > 1 ? 's' : ''} de tolerância)`}
+          </dd>
+        </div>
+      </dl>
+      {imovel?.descricao && <p className="sub">{imovel.descricao}</p>}
+    </section>
   );
 }

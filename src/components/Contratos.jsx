@@ -6,7 +6,7 @@ import { FormContrato, ModalRegrasCobranca, ModalReajuste } from './Formularios'
 import { ModalPagamento } from './Pagamentos';
 import { STATUS_PAGAMENTO, analisarContratos, dataBR, moeda, paraISO, semAcento } from '../utils';
 
-export default function Contratos({ contratos, inquilinos, pagamentos, regras, recarregar, abrirInquilino, irPara, filtroInicial }) {
+export default function Contratos({ contratos, inquilinos, imoveis = [], pagamentos, regras, recarregar, abrirInquilino, irPara, filtroInicial }) {
   const { avisar, confirmar } = useUI();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState(filtroInicial?.status || '');
@@ -241,6 +241,7 @@ export default function Contratos({ contratos, inquilinos, pagamentos, regras, r
         <FormContrato
           contrato={formulario.contrato}
           inquilinos={inquilinos}
+          imoveis={imoveis}
           regras={regras}
           aoFechar={() => setFormulario(null)}
           aoSalvar={() => {

@@ -5,6 +5,7 @@ import { Etiqueta, Vazio, useUI } from './UI';
 import { FormContrato, FormInquilino } from './Formularios';
 import Documentos from './Documentos';
 import AcessoPortal from './AcessoPortal';
+import { ComunicadosDoInquilino } from './Comunicados';
 import DetalheSolicitacao from './DetalheSolicitacao';
 import {
   analisarContratos,
@@ -18,7 +19,7 @@ import {
 } from '../utils';
 import { HistoricoPagamentos, ModalPagamento } from './Pagamentos';
 
-export default function Inquilinos({ inquilinos, contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
+export default function Inquilinos({ inquilinos, imoveis = [], contratos: contratosBrutos, solicitacoes, pagamentos, regras, recarregar, abertoId, abrir }) {
   // Contratos com o status de pagamento calculado pelos pagamentos registrados
   const contratos = useMemo(() => analisarContratos(contratosBrutos, pagamentos, regras), [contratosBrutos, pagamentos, regras]);
   const [busca, setBusca] = useState('');
@@ -33,6 +34,7 @@ export default function Inquilinos({ inquilinos, contratos: contratosBrutos, sol
         contratos={contratos.filter((c) => c.inquilino_id === aberto.id)}
         solicitacoes={solicitacoes.filter((s) => s.contratos?.inquilino_id === aberto.id)}
         regras={regras}
+        imoveis={imoveis}
         recarregar={recarregar}
         voltar={() => abrir(null)}
       />
@@ -138,7 +140,7 @@ function idade(dataNascimento) {
   return anos;
 }
 
-function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, recarregar, voltar }) {
+function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras, imoveis, recarregar, voltar }) {
   const { avisar, confirmar } = useUI();
   const [editando, setEditando] = useState(false);
   const [novoContrato, setNovoContrato] = useState(false);
@@ -210,6 +212,8 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
         aoPagar={setPagando}
         aoAbrirSolicitacao={setAbertaId}
       />
+
+      <ComunicadosDoInquilino inquilino={inquilino} />
 
       <div className="ficha-grade">
         <section className="cartao">
@@ -340,6 +344,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
       {novoContrato && (
         <FormContrato
           inquilinos={inquilinos}
+          imoveis={imoveis}
           regras={regras}
           inquilinoFixo={inquilino.id}
           aoFechar={() => setNovoContrato(false)}

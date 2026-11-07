@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Etiqueta } from './UI';
 import { ModalReajuste } from './Formularios';
+import { FormCusto } from './Custos';
 import {
   analisarContratos,
   analisarSolicitacao,
@@ -11,14 +12,16 @@ import {
   saudacao,
   dataPorExtenso,
   estaEncerrada,
+  nomeMes,
   mesAtual,
   resumoDoMes,
 } from '../utils';
 
 const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
 
-export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], regras, recarregar, irPara, abrirInquilino }) {
+export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);
+  const [lancandoCusto, setLancandoCusto] = useState(false);
   const lista = useMemo(() => analisarContratos(contratos, pagamentos, regras), [contratos, pagamentos, regras]);
   const ativos = lista.filter((c) => c.situacao.tipo !== 'encerrado');
 
@@ -78,6 +81,20 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
     });
   }
 
+  // Comunicados recusados pelo inquilino nos últimos 15 dias
+  const limiteRecusa = Date.now() - 15 * 86400000;
+  for (const c of comunicados) {
+    if (c.resposta !== 'Recusado' || new Date(c.respondido_em).getTime() < limiteRecusa) continue;
+    pontos.push({
+      id: `com${c.id}`,
+      grupo: 'Comunicados',
+      nivel: 'amarelo',
+      titulo: `${c.inquilinos?.nome || 'Inquilino'} recusou "${c.titulo}"`,
+      texto: c.resposta_comentario ? `“${c.resposta_comentario}”` : 'Sem comentário',
+      abrir: () => abrirInquilino(c.inquilino_id),
+    });
+  }
+
   const graves = pontos.filter((p) => p.nivel === 'vermelho').length;
   const situacaoGeral = !pontos.length ? 'ok' : graves ? 'grave' : 'atencao';
 
@@ -95,7 +112,7 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
 
   const agenda = [...ativos].sort((a, b) => a.vencimento.data - b.vencimento.data).slice(0, 6);
 
-  const grupos = ['Pagamentos', 'Contratos', 'Solicitações'].map((grupo) => ({
+  const grupos = ['Pagamentos', 'Contratos', 'Solicitações', 'Comunicados'].map((grupo) => ({
     grupo,
     itens: pontos.filter((p) => p.grupo === grupo),
   }));
@@ -223,6 +240,51 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
         </section>
 
         <div className="inicio-coluna">
+          {/* Custos do mês: ver, lançar e editar a partir daqui */}
+          <section className="cartao custos-inicio">
+            <div className="cartao-topo">
+              <h2>Custos de {nomeMes(mes.chave).split(' ')[0].toLowerCase()}</h2>
+              <button className="botao botao-pequeno botao-primario" onClick={() => setLancandoCusto(true)}>
+                + Lançar custo
+              </button>
+            </div>
+            <div className="custos-inicio-numeros">
+              <div>
+                <span>Recebido</span>
+                <strong className="texto-verde">{moeda(mes.recebido)}</strong>
+              </div>
+              <div>
+                <span>Custos</span>
+                <strong className="texto-vermelho">− {moeda(mes.totalCustos)}</strong>
+              </div>
+              <div>
+                <span>Resultado</span>
+                <strong className={mes.resultado < 0 ? 'texto-vermelho' : ''}>{moeda(mes.resultado)}</strong>
+              </div>
+            </div>
+            {!mes.custos.length ? (
+              <p className="texto-suave pequeno">Nenhum custo lançado neste mês.</p>
+            ) : (
+              <ul className="custos-inicio-lista">
+                {mes.custos.slice(0, 4).map((c) => (
+                  <li key={c.id}>
+                    <span>
+                      <strong>{c.descricao}</strong>
+                      <small className="sub">
+                        {dataBR(c.data)} · {c.categoria}
+                        {c.solicitacoes?.titulo ? ` · chamado: ${c.solicitacoes.titulo}` : ''}
+                      </small>
+                    </span>
+                    <strong className="texto-vermelho">{moeda(c.valor)}</strong>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button className="link" onClick={() => irPara('custos', { mes: mes.chave })}>
+              {mes.custos.length > 4 ? `Ver todos os ${mes.custos.length} custos` : 'Ver, editar e comparar meses'} ›
+            </button>
+          </section>
+
           {/* Gráfico: aluguéis do mês por situação do pagamento */}
           <section className="cartao">
             <h2>Aluguéis do mês</h2>
@@ -257,18 +319,6 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
                 </li>
               ))}
             </ul>
-            <button className="mes-balanco" onClick={() => irPara('custos', { mes: mes.chave })} title="Ver os custos do mês">
-              <span>
-                Recebido <strong className="texto-verde">{moeda(mes.recebido)}</strong>
-              </span>
-              <span>
-                Custos <strong className="texto-vermelho">− {moeda(mes.totalCustos)}</strong>
-              </span>
-              <span>
-                Resultado <strong className={mes.resultado < 0 ? 'texto-vermelho' : ''}>{moeda(mes.resultado)}</strong>
-              </span>
-              <span className="seta-direita">›</span>
-            </button>
           </section>
 
           {/* Gráfico: receita por imóvel */}
@@ -329,6 +379,18 @@ export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pa
           </section>
         </div>
       </div>
+
+      {lancandoCusto && (
+        <FormCusto
+          contratos={contratos}
+          solicitacoes={solicitacoes}
+          aoFechar={() => setLancandoCusto(false)}
+          aoSalvar={() => {
+            setLancandoCusto(false);
+            recarregar();
+          }}
+        />
+      )}
 
       {reajuste && (
         <ModalReajuste

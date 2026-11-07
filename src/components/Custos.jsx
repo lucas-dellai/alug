@@ -10,7 +10,7 @@ import { CATEGORIAS_CUSTO, dataBR, hoje, mesAtual, moeda, nomeMes, paraISO, resu
 const TIPOS_ACEITOS = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
 
-export default function Custos({ custos, contratos, solicitacoes, pagamentos, recarregar, abrirInquilino, mesInicial }) {
+export default function Custos({ custos, contratos, solicitacoes, pagamentos, recarregar, abrirInquilino, mesInicial, voltar }) {
   const [mes, setMes] = useState(mesInicial || mesAtual());
   const [imovel, setImovel] = useState('');
   const [formulario, setFormulario] = useState(null); // {} novo, { custo } editar
@@ -25,6 +25,11 @@ export default function Custos({ custos, contratos, solicitacoes, pagamentos, re
 
   return (
     <div className="pagina">
+      {voltar && (
+        <button className="voltar" onClick={voltar}>
+          ← Início
+        </button>
+      )}
       <div className="pagina-topo">
         <div>
           <h1>Custos</h1>
