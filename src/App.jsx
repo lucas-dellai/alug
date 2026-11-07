@@ -89,13 +89,13 @@ function Sistema({ perfil, setPerfil }) {
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [filtroContratos, setFiltroContratos] = useState(null);
   const [mesCustos, setMesCustos] = useState(null);
-  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], custos: [], imoveis: [], comunicados: [], regras: undefined });
+  const [dados, setDados] = useState({ inquilinos: [], contratos: [], solicitacoes: [], pagamentos: [], custos: [], imoveis: [], comunicados: [], informes: [], regras: undefined });
   const [carregando, setCarregando] = useState(true);
 
   // Busca tudo na API (READ)
   const recarregar = useCallback(async () => {
     try {
-      const [inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados] = await Promise.all([
+      const [inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados, informes] = await Promise.all([
         api.listar('inquilinos'),
         api.listar('contratos'),
         api.listar('solicitacoes'),
@@ -104,8 +104,9 @@ function Sistema({ perfil, setPerfil }) {
         api.listar('custos').catch(() => []),
         api.listar('imoveis').catch(() => []),
         api.listar('comunicados').catch(() => []),
+        api.listar('informes', { status: 'Aguardando' }).catch(() => []),
       ]);
-      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados });
+      setDados({ inquilinos, contratos, solicitacoes, pagamentos, regras, custos, imoveis, comunicados, informes });
     } catch (erro) {
       avisar(erro.message, 'erro');
     } finally {

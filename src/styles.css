@@ -26,7 +26,7 @@
 
   --raio: 14px;
   --sombra: 0 1px 2px rgba(29, 43, 42, 0.04);
-  --titulo: 'Fraunces', Georgia, serif;
+  --titulo: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
   --texto: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -61,9 +61,9 @@ h3 {
 
 h1 {
   font-family: var(--titulo);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 30px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 h2 {
@@ -3907,4 +3907,132 @@ input[type='month'] {
   .custos-inicio-numeros strong {
     font-size: 16px;
   }
+}
+
+/* ================= Títulos: todos na fonte moderna ================= */
+h1,
+h2,
+h3,
+.modal-topo h2,
+.cartao h2,
+.secao-formulario,
+.subtitulo-secao,
+.login-formulario h2,
+.vazio h3 {
+  font-family: var(--titulo);
+  letter-spacing: -0.01em;
+}
+
+h2,
+.cartao h2,
+.modal-topo h2 {
+  font-weight: 700;
+}
+
+.secao-formulario {
+  letter-spacing: 0.06em;
+}
+
+/* ================= Realizei o pagamento ================= */
+.pagamento-informar {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.botao-largo {
+  width: 100%;
+  justify-content: center;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 16px;
+}
+
+.aviso-pagamento {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.aviso-analise {
+  background: var(--azul-fundo);
+  color: var(--azul);
+}
+
+.aviso-recusado {
+  background: var(--vermelho-fundo);
+  color: var(--vermelho);
+}
+
+.aviso-confirmado {
+  background: var(--verde-fundo);
+  color: var(--verde);
+}
+
+.aviso-lembrete {
+  background: var(--amarelo-fundo);
+  color: var(--amarelo);
+}
+
+.caixa-pix {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--primaria);
+  background: var(--branco);
+}
+
+.caixa-pix > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pix-chave {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.arquivo-comprovante {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 2px dashed var(--borda);
+  border-radius: 12px;
+  background: var(--branco);
+  cursor: pointer;
+}
+
+.arquivo-comprovante > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.arquivo-comprovante strong {
+  overflow-wrap: anywhere;
+}
+
+.arquivo-comprovante small {
+  color: var(--suave);
+}
+
+.arquivo-comprovante.com-arquivo {
+  border-color: var(--verde);
+  background: var(--verde-fundo);
+}
+
+.arquivo-icone {
+  font-size: 22px;
+}
+
+.dados-conferir {
+  margin-bottom: 10px;
 }
