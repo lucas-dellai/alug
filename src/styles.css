@@ -4036,3 +4036,140 @@ h2,
 .dados-conferir {
   margin-bottom: 10px;
 }
+
+/* ================= Personalização ================= */
+.opcoes-segmento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--superficie-2);
+}
+
+.opcoes-segmento button {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--suave);
+  cursor: pointer;
+}
+
+.opcoes-segmento button.ativo {
+  background: var(--branco);
+  color: var(--primaria);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.finalidade {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-right: 4px;
+}
+
+.finalidade-residencial {
+  background: var(--verde-fundo);
+  color: var(--verde);
+}
+
+.finalidade-comercial {
+  background: var(--azul-fundo);
+  color: var(--azul);
+}
+
+.lista-marcar {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 4px 16px;
+}
+
+.lista-marcar .caixa-marcar {
+  margin: 0;
+}
+
+.lista-campos {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.lista-campos li,
+.anexos-pendentes li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--branco);
+}
+
+.lista-campos li > span,
+.anexos-pendentes li > span {
+  display: grid;
+  min-width: 0;
+}
+
+.novo-campo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.anexos-pendentes {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.anexos-pendentes li {
+  border-style: dashed;
+}
+
+.so-voce {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--suave);
+  vertical-align: middle;
+}
+
+.caixa-marcar-pequena {
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.envio-documento input:not([type='file']) {
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .novo-campo {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .novo-campo input {
+    grid-column: 1 / -1;
+  }
+}
+
+.envio-documento {
+  flex-wrap: wrap;
+}

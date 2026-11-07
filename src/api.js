@@ -41,6 +41,11 @@ export const api = {
   // Regras de cobrança (multa, juros e tolerância)
   atualizarRegras: (dados) => requisicao('PUT', 'configuracoes', dados),
 
+  // Ficha do inquilino: seções visíveis e campos personalizados
+  salvarFicha: (dados) => requisicao('PUT', 'configuracoes', { ...dados, somente_ficha: true }),
+  verExtras: (inquilinoId) => requisicao('GET', `extras?inquilino_id=${inquilinoId}`),
+  salvarExtras: (inquilinoId, valores) => requisicao('PUT', `extras?inquilino_id=${inquilinoId}`, { valores }),
+
   // Perfil de quem está logado
   perfil: () => requisicao('GET', 'perfil'),
   salvarPerfil: (dados) => requisicao('PUT', 'perfil', dados),

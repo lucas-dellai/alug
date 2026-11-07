@@ -436,3 +436,24 @@ export const dataHoraBR = (iso) =>
 
 // Itens que o anfitrião marca como "incluso" ou "não incluso" no aluguel (ele pode criar outros)
 export const ITENS_INCLUSOS_PADRAO = ['Água', 'Luz', 'Gás', 'Internet', 'IPTU', 'Condomínio', 'Lixo', 'Limpeza', 'Jardinagem', 'Seguro'];
+
+// ---------- Ficha do inquilino personalizável ----------
+
+export const SECOES_FICHA = [
+  { id: 'resumo', rotulo: 'Resumo e pontos de atenção' },
+  { id: 'comunicados', rotulo: 'Comunicados' },
+  { id: 'dados', rotulo: 'Dados pessoais' },
+  { id: 'adicionais', rotulo: 'Informações adicionais (seus campos)' },
+  { id: 'documentos', rotulo: 'Documentos' },
+  { id: 'acesso', rotulo: 'Acesso ao portal' },
+  { id: 'contratos', rotulo: 'Contratos e pagamentos' },
+  { id: 'solicitacoes', rotulo: 'Solicitações' },
+];
+
+export const TIPOS_CAMPO = [
+  { id: 'texto', rotulo: 'Texto' },
+  { id: 'numero', rotulo: 'Número' },
+  { id: 'data', rotulo: 'Data' },
+  { id: 'sim_nao', rotulo: 'Sim ou não' },
+  { id: 'anexo', rotulo: 'Anexo (PDF ou imagem)' },
+];
