@@ -4424,3 +4424,17 @@ h2,
     font-size: 26px;
   }
 }
+
+/* Contatos só com ícone */
+.contato-pilula {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.contato-pilula svg {
+  width: 20px;
+  height: 20px;
+}
