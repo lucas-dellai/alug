@@ -11,6 +11,7 @@ export default criarCrud({
     'nome',
     'endereco',
     'tipo',
+    'finalidade',
     'quartos',
     'banheiros',
     'vagas',
@@ -38,6 +39,9 @@ export default criarCrud({
     }
     exigirCampos(dados, { nome: 'Nome do imóvel', endereco: 'Endereço' }, modo);
     if (dados.tipo && !TIPOS.includes(dados.tipo)) throw new ErroApi(400, 'Tipo de imóvel inválido.');
+    if (dados.finalidade && !['Residencial', 'Comercial'].includes(dados.finalidade)) {
+      throw new ErroApi(400, 'Escolha residencial ou comercial.');
+    }
     for (const campo of ['quartos', 'banheiros', 'vagas']) {
       if (dados[campo] !== undefined && dados[campo] !== null) {
         const n = Number(dados[campo]);
