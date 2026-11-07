@@ -162,7 +162,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
   async function excluir() {
     const ok = await confirmar(
       'Excluir inquilino?',
-      `${inquilino.nome} e todos os documentos anexados serão apagados. Essa ação não pode ser desfeita.`,
+      `${inquilino.nome} será apagado de vez, junto com os documentos anexados e o acesso ao portal. Essa ação não pode ser desfeita. (Se ele tiver contrato, exclua o contrato antes.)`,
     );
     if (!ok) return;
     try {
@@ -194,25 +194,57 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
 
   return (
     <div className="pagina">
-      <button className="voltar" onClick={voltar}>
-        ← Todos os inquilinos
-      </button>
-
-      <div className="pagina-topo">
-        <div className="ficha-titulo">
-          <span className="avatar avatar-grande">{iniciais(inquilino.nome)}</span>
-          <div>
-            <h1>{inquilino.nome}</h1>
-          </div>
-        </div>
-        <div className="botoes">
+      <div className="ficha-barra">
+        <button className="voltar" onClick={voltar}>
+          ← Todos os inquilinos
+        </button>
+        <div className="ficha-icones">
           <BotaoEngrenagem aoClicar={() => setConfigurando(true)} />
-          <button className="botao botao-secundario" onClick={() => setEditando(true)}>
-            Editar dados
+          <button className="botao-icone-redondo" onClick={() => setEditando(true)} title="Editar dados" aria-label="Editar dados">
+            <Icone nome="lapis" />
           </button>
-          <button className="botao botao-perigo-leve" onClick={excluir}>
-            Excluir
+          <button
+            className="botao-icone-redondo icone-perigo"
+            onClick={excluir}
+            title="Excluir inquilino (apaga de vez)"
+            aria-label="Excluir inquilino"
+          >
+            <Icone nome="lixeira" />
           </button>
+        </div>
+      </div>
+
+      <div className="ficha-cabecalho">
+        <span className="avatar avatar-grande">{iniciais(inquilino.nome)}</span>
+        <div className="ficha-identidade">
+          <h1>{inquilino.nome}</h1>
+          {(inquilino.profissao || anos !== null) && (
+            <p className="ficha-subtitulo">
+              {[inquilino.profissao, anos !== null && `${anos} anos`].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <div className="ficha-contatos">
+            {linkWhatsApp(inquilino.telefone) && (
+              <a className="contato-pilula contato-whatsapp" href={linkWhatsApp(inquilino.telefone)} target="_blank" rel="noreferrer">
+                <Icone nome="conversa" /> WhatsApp
+              </a>
+            )}
+            {inquilino.telefone && (
+              <a className="contato-pilula" href={`tel:${String(inquilino.telefone).replace(/\D/g, '')}`}>
+                <Icone nome="telefone" /> Ligar
+              </a>
+            )}
+            {inquilino.email && (
+              <a className="contato-pilula" href={`mailto:${inquilino.email}`}>
+                <Icone nome="email" /> E-mail
+              </a>
+            )}
+            {!inquilino.telefone && !inquilino.email && (
+              <button className="link pequeno" onClick={() => setEditando(true)}>
+                + Adicionar telefone e e-mail
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -572,5 +604,22 @@ function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirS
         )
       )}
     </section>
+  );
+}
+
+// Ícones simples usados na ficha
+function Icone({ nome }) {
+  const caminhos = {
+    lapis: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+    lixeira: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
+    conversa: 'M21 11.5a8.4 8.4 0 0 1-12.3 7.5L3 21l2-5.5A8.4 8.4 0 1 1 21 11.5z',
+    telefone:
+      'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z',
+    email: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM22 6l-10 7L2 6',
+  };
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={caminhos[nome]} />
+    </svg>
   );
 }
