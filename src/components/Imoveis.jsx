@@ -18,6 +18,14 @@ import {
 } from '../utils';
 
 const FILTROS = ['Todos', 'Alugado', 'Disponível', 'Reservado'];
+export const CATEGORIAS_PADRAO = ['Residencial', 'Comercial'];
+
+// Etiqueta da categoria do imóvel (Residencial verde, Comercial azul, as criadas em roxo)
+export function EtiquetaCategoria({ nome }) {
+  const categoria = nome || 'Residencial';
+  const cor = { residencial: 'residencial', comercial: 'comercial' }[categoria.toLowerCase()] || 'outra';
+  return <span className={`finalidade finalidade-${cor}`}>{categoria}</span>;
+}
 const CORES = { Alugado: 'verde', Disponível: 'azul', Reservado: 'amarelo' };
 
 export default function Imoveis({ imoveis = [], contratos, inquilinos, pagamentos, regras, recarregar, abrirInquilino }) {
@@ -107,6 +115,7 @@ export default function Imoveis({ imoveis = [], contratos, inquilinos, pagamento
       {formulario && (
         <FormImovel
           imovel={formulario.imovel}
+          categorias={regras?.categorias_imovel || CATEGORIAS_PADRAO}
           itensConhecidos={itensConhecidos}
           aoFechar={() => setFormulario(null)}
           aoSalvar={() => {
@@ -159,9 +168,7 @@ function CartaoImovel({ imovel, aoEditar, aoAlugar, abrirInquilino }) {
         <div>
           <h3>{imovel.nome}</h3>
           <p className="sub">
-            <span className={`finalidade finalidade-${(imovel.finalidade || 'Residencial').toLowerCase()}`}>
-              {imovel.finalidade || 'Residencial'}
-            </span>{' '}
+            <EtiquetaCategoria nome={imovel.finalidade} />{' '}
             {imovel.tipo} · {imovel.endereco}
           </p>
           {specs && <p className="imovel-specs">{specs}</p>}
@@ -237,8 +244,37 @@ function CartaoImovel({ imovel, aoEditar, aoAlugar, abrirInquilino }) {
 }
 
 // CREATE / UPDATE / DELETE de um imóvel, com foto de capa
-export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, aoFechar, aoSalvar }) {
+export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, categorias = CATEGORIAS_PADRAO, aoFechar, aoSalvar }) {
   const { avisar, confirmar } = useUI();
+  // Categorias: Residencial e Comercial por padrão, mais as que o anfitrião criar (ex.: Trailer)
+  const [categoriasLista, setCategoriasLista] = useState(() => {
+    const lista = [...categorias];
+    if (imovel?.finalidade && !lista.includes(imovel.finalidade)) lista.push(imovel.finalidade);
+    return lista;
+  });
+  const [criandoCategoria, setCriandoCategoria] = useState(false);
+  const [novaCategoria, setNovaCategoria] = useState('');
+
+  async function criarCategoria() {
+    const nome = novaCategoria.trim().slice(0, 30);
+    if (!nome) return;
+    const existente = categoriasLista.find((c) => c.toLowerCase() === nome.toLowerCase());
+    if (existente) {
+      setV((atual) => ({ ...atual, finalidade: existente }));
+    } else {
+      const lista = [...categoriasLista, nome];
+      try {
+        await api.salvarCategorias(lista);
+        setCategoriasLista(lista);
+        setV((atual) => ({ ...atual, finalidade: nome }));
+        avisar(`Categoria "${nome}" criada.`);
+      } catch (erro) {
+        return avisar(erro.message, 'erro');
+      }
+    }
+    setNovaCategoria('');
+    setCriandoCategoria(false);
+  }
   const [salvando, setSalvando] = useState(false);
   const [foto, setFoto] = useState(null); // arquivo novo
   const [previa, setPrevia] = useState(imovel?.foto_url || '');
@@ -388,9 +424,9 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ao
           <Campo rotulo="Nome do imóvel" obrigatorio dica="Como você chama, ex.: Casa da Rua das Flores">
             <input value={v.nome} onChange={muda('nome')} required autoFocus={!imovel} />
           </Campo>
-          <Campo rotulo="Finalidade">
-            <div className="opcoes-segmento" role="radiogroup" aria-label="Finalidade">
-              {['Residencial', 'Comercial'].map((f) => (
+          <Campo rotulo="Categoria" largo>
+            <div className="opcoes-segmento" role="radiogroup" aria-label="Categoria">
+              {categoriasLista.map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -402,6 +438,31 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ao
                   {f}
                 </button>
               ))}
+              {!criandoCategoria ? (
+                <button type="button" className="categoria-nova" onClick={() => setCriandoCategoria(true)}>
+                  + Nova categoria
+                </button>
+              ) : (
+                <span className="categoria-criar">
+                  <input
+                    value={novaCategoria}
+                    onChange={(e) => setNovaCategoria(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        criarCategoria();
+                      }
+                    }}
+                    placeholder="Ex.: Trailer"
+                    maxLength={30}
+                    autoFocus
+                    aria-label="Nome da nova categoria"
+                  />
+                  <button type="button" className="botao botao-pequeno botao-primario" onClick={criarCategoria}>
+                    Criar
+                  </button>
+                </span>
+              )}
             </div>
           </Campo>
           <Campo rotulo="Tipo">

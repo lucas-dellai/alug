@@ -460,22 +460,46 @@ function ResumoInquilino({ inquilino, contratos, solicitacoes, aoPagar, aoAbrirS
               Registrar pagamento
             </button>
             {whatsapp && (
-              <a className="botao botao-pequeno botao-secundario" href={`${whatsapp}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noreferrer">
+              <a className="botao botao-pequeno botao-whatsapp" href={`${whatsapp}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noreferrer">
                 Cobrar no WhatsApp
               </a>
             )}
           </>
         ),
       });
-    } else if (c.status_pagamento === 'Pendente' && c.situacao.tipo !== 'encerrado') {
+    } else if (
+      c.status_pagamento === 'Pendente' &&
+      c.situacao.tipo !== 'encerrado' &&
+      !informes.some((i) => i.contrato_id === c.id)
+    ) {
+      // Ainda não pagou (e não informou pagamento): lembrete com um toque no WhatsApp
+      const jaVenceu = c.vencimento.dias <= 0;
+      const lembrete = jaVenceu
+        ? `Olá, ${primeiroNome(inquilino.nome)}! Tudo bem? O aluguel de ${c.imovel} (${moeda(c.valor_aluguel)}) venceu em ${dataBR(c.vencimento.data)} e ainda não consta como pago. Consegue verificar? Se já pagou, é só tocar em "Realizei o pagamento" no portal e anexar o comprovante.`
+        : `Olá, ${primeiroNome(inquilino.nome)}! Tudo bem? Passando para lembrar que o aluguel de ${c.imovel} (${moeda(c.valor_aluguel)}) vence em ${dataBR(c.vencimento.data)}. Depois de pagar, é só tocar em "Realizei o pagamento" no portal e anexar o comprovante.`;
+      const whatsapp = linkWhatsApp(inquilino.telefone);
       pontos.push({
         cor: 'amarelo',
-        titulo: c.vencimento.dias > 0 ? 'Aluguel do mês ainda não pago' : 'Pagamento do mês pendente',
-        texto: `${c.imovel} · ${moeda(c.valor_aluguel)} · ${c.vencimento.dias > 0 ? `vence em ${dataBR(c.vencimento.data)} (faltam ${c.vencimento.dias} dia(s))` : `venceu em ${dataBR(c.vencimento.data)}, ainda na tolerância`}`,
+        titulo: jaVenceu ? 'Pagamento do mês não realizado' : 'Aluguel do mês ainda não pago',
+        texto: `${c.imovel} · ${moeda(c.valor_aluguel)} · ${jaVenceu ? `venceu em ${dataBR(c.vencimento.data)}, ainda na tolerância` : `vence em ${dataBR(c.vencimento.data)} (faltam ${c.vencimento.dias} dia(s))`}`,
         acoes: (
-          <button className="botao botao-pequeno botao-primario" onClick={() => aoPagar(c)}>
-            Registrar pagamento
-          </button>
+          <>
+            {whatsapp ? (
+              <a
+                className="botao botao-pequeno botao-whatsapp"
+                href={`${whatsapp}?text=${encodeURIComponent(lembrete)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {jaVenceu ? 'Cobrar no WhatsApp' : 'Lembrar no WhatsApp'}
+              </a>
+            ) : (
+              <span className="sub pequeno">Cadastre o telefone para cobrar no WhatsApp</span>
+            )}
+            <button className="botao botao-pequeno botao-secundario" onClick={() => aoPagar(c)}>
+              Registrar pagamento
+            </button>
+          </>
         ),
       });
     }

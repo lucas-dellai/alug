@@ -1,6 +1,7 @@
 // Contratos: lista com filtros, cadastro, edição, reajuste e exclusão (CRUD de contratos).
 import { useMemo, useState } from 'react';
 import { api } from '../api';
+import { EtiquetaCategoria } from './Imoveis';
 import { Etiqueta, Vazio, useUI } from './UI';
 import { FormContrato, ModalRegrasCobranca, ModalReajuste } from './Formularios';
 import { ModalPagamento } from './Pagamentos';
@@ -142,7 +143,7 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
           <p className="texto-suave centro">Nenhum contrato encontrado com esses filtros.</p>
         ) : (
           <div className="tabela-contorno">
-            <table className="tabela">
+            <table className="tabela tabela-contratos">
               <thead>
                 <tr>
                   <th>Inquilino / Imóvel</th>
@@ -156,12 +157,14 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
               <tbody>
                 {filtrados.map((c) => (
                   <tr key={c.id}>
-                    <td data-rotulo="Inquilino">
-                      <button className="link" onClick={() => abrirInquilino(c.inquilino_id)}>
+                    <td className="celula-inquilino">
+                      <button className="link nome-inquilino" onClick={() => abrirInquilino(c.inquilino_id)}>
                         {c.inquilinos?.nome}
                       </button>
-                      <span className="sub">{c.imovel}</span>
-                      <span className="sub">Garantia: {c.tipo_garantia}</span>
+                      <span className="imovel-linha">
+                        <EtiquetaCategoria nome={c.imoveis?.finalidade} />
+                        <span>{c.imoveis?.nome || c.imovel}</span>
+                      </span>
                     </td>
                     <td data-rotulo="Aluguel">
                       <strong>{moeda(c.valor_aluguel)}</strong>
@@ -169,8 +172,8 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
                         <span className="sub destaque-azul">Reajuste disponível</span>
                       )}
                     </td>
-                    <td data-rotulo="Vencimento">Todo dia {c.dia_vencimento}</td>
-                    <td data-rotulo="Contrato">
+                    <td data-rotulo="Vencimento">Dia {c.dia_vencimento}</td>
+                    <td data-rotulo="Contrato" className="celula-contrato">
                       <strong className={`vence-em vence-${c.situacao.tipo}`}>
                         {c.situacao.tipo === 'encerrado' ? 'Venceu em' : 'Vence em'} {dataBR(c.data_fim)}
                       </strong>
@@ -192,7 +195,7 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
                         <span className="sub pequeno">Libera em {dataBR(c.renovacao.inicioJanela)}</span>
                       )}
                     </td>
-                    <td data-rotulo="Pagamento do mês">
+                    <td data-rotulo="Pagamento do mês" className="celula-pagamento">
                       <span className="pagamento-mes">
                         <Etiqueta valor={c.status_pagamento} />
                         {c.parcela && (
@@ -208,9 +211,6 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
                           <br />
                           multa {moeda(c.atraso.multa)} + juros {moeda(c.atraso.juros)}
                         </span>
-                      )}
-                      {!c.atraso && c.pagamento.ultimo && (
-                        <span className="sub">Último: {dataBR(c.pagamento.ultimo.data_pagamento)}</span>
                       )}
                     </td>
                     <td className="acoes">
