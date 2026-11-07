@@ -4173,3 +4173,124 @@ h2,
 .envio-documento {
   flex-wrap: wrap;
 }
+
+/* ================= Categorias de imóvel ================= */
+.opcoes-segmento {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.opcoes-segmento button {
+  flex: 0 0 auto;
+}
+
+.categoria-nova {
+  color: var(--primaria) !important;
+  border: 1px dashed var(--primaria) !important;
+  background: var(--branco) !important;
+}
+
+.categoria-criar {
+  display: flex;
+  gap: 6px;
+  flex: 1 1 220px;
+}
+
+.categoria-criar input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.finalidade-outra {
+  background: #efe7fb;
+  color: #6b3fb5;
+}
+
+/* ================= Lista de contratos mais fácil de ler ================= */
+.nome-inquilino {
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.imovel-linha {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--suave);
+}
+
+.imovel-linha .finalidade {
+  margin-right: 0;
+}
+
+@media (max-width: 720px) {
+  /* Cartão branco sobre o fundo cinza, para dar contraste */
+  .tabela-contratos tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 8px;
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    box-shadow: 0 1px 3px rgba(16, 24, 20, 0.06);
+    padding: 14px 8px 10px;
+  }
+
+  .tabela-contratos td {
+    width: auto !important;
+  }
+
+  .tabela-contratos .celula-inquilino,
+  .tabela-contratos td.acoes {
+    grid-column: 1 / -1;
+  }
+
+  .tabela-contratos .celula-inquilino {
+    padding-bottom: 12px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .tabela-contratos .nome-inquilino {
+    font-size: 19px;
+  }
+
+  .tabela-contratos .celula-contrato,
+  .tabela-contratos .celula-pagamento {
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .tabela-contratos .celula-contrato .vence-em {
+    font-size: 15px;
+  }
+
+  .tabela-contratos .celula-contrato .sub:not(.pequeno) {
+    display: none;
+  }
+
+  .tabela-contratos td.acoes {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--borda);
+  }
+}
+
+/* Botão do WhatsApp (verde do app) */
+.botao-whatsapp,
+.alerta-acoes a.botao-whatsapp {
+  background: #1fa855;
+  border-color: #1fa855;
+  color: #fff;
+  text-decoration: none;
+}
+
+.botao-whatsapp:hover {
+  background: #178a45;
+}

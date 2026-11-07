@@ -42,6 +42,8 @@ export const api = {
   atualizarRegras: (dados) => requisicao('PUT', 'configuracoes', dados),
 
   // Ficha do inquilino: seções visíveis e campos personalizados
+  salvarCategorias: (categorias_imovel) =>
+    requisicao('PUT', 'configuracoes', { categorias_imovel, somente_categorias: true }),
   salvarFicha: (dados) => requisicao('PUT', 'configuracoes', { ...dados, somente_ficha: true }),
   verExtras: (inquilinoId) => requisicao('GET', `extras?inquilino_id=${inquilinoId}`),
   salvarExtras: (inquilinoId, valores) => requisicao('PUT', `extras?inquilino_id=${inquilinoId}`, { valores }),
