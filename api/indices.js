@@ -14,7 +14,7 @@ const dataBCB = (d) =>
 async function buscar(url) {
   try {
     const resposta = await fetch(url, {
-      headers: { Accept: 'application/json', 'User-Agent': 'Recceptor/1.0' },
+      headers: { Accept: 'application/json', 'User-Agent': 'Alug/1.0' },
       signal: AbortSignal.timeout(10000),
     });
     if (!resposta.ok) return null;
