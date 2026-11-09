@@ -362,7 +362,9 @@ export function FormImovel({ imovel, itensConhecidos = ITENS_INCLUSOS_PADRAO, ca
       };
       if (foto) {
         const reduzida = await reduzirFoto(foto);
-        novoCaminho = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        // Pasta do anfitrião: cada um só altera as próprias fotos
+        const { data: sessao } = await supabase.auth.getSession();
+        novoCaminho = `${sessao.session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
         const { error } = await supabase.storage.from('imoveis').upload(novoCaminho, reduzida, { contentType: 'image/jpeg' });
         if (error) throw new Error('Não foi possível enviar a foto.');
         dados.foto_caminho = novoCaminho;

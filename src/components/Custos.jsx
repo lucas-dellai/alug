@@ -292,7 +292,9 @@ export function FormCusto({ custo, contratos = [], solicitacoes = [], fixo, data
       };
       if (arquivo) {
         const nomeSeguro = semAcento(arquivo.name).replace(/[^a-z0-9._-]/g, '_');
-        novoCaminho = `${v.data.slice(0, 7)}/${Date.now()}-${nomeSeguro}`;
+        // Pasta do anfitrião: cada um só acessa os próprios comprovantes
+        const { data: sessao } = await supabase.auth.getSession();
+        novoCaminho = `${sessao.session.user.id}/${v.data.slice(0, 7)}/${Date.now()}-${nomeSeguro}`;
         const { error } = await supabase.storage.from('custos').upload(novoCaminho, arquivo, { contentType: arquivo.type });
         if (error) throw new Error('Não foi possível enviar o comprovante.');
         dados.comprovante_nome = arquivo.name;
