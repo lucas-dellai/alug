@@ -1,6 +1,6 @@
-# Recceptor · Gestão de aluguéis
+# Alug · Gestão de aluguéis
 
-<img src="public/icone.png" alt="Logo Recceptor" width="96" />
+<img src="public/alug-logo-principal.svg" alt="Logo Alug" width="160" />
 
 Aplicação web para administrar imóveis alugados: cadastro de inquilinos com documentos, contratos, cobrança com multa e juros, reajuste anual pelo IGP-M ou IPCA e um quadro Kanban para as solicitações dos inquilinos.
 
