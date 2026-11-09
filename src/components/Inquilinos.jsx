@@ -345,7 +345,7 @@ function FichaInquilino({ inquilino, inquilinos, contratos, solicitacoes, regras
                   <Etiqueta valor={c.situacao.tipo}>{c.situacao.texto}</Etiqueta>
                   <Etiqueta valor={c.status_pagamento} />
                   {c.situacao.tipo !== 'encerrado' && (
-                    <button className="botao botao-pequeno botao-primario" onClick={() => setPagando(c)}>
+                    <button className="botao botao-pequeno botao-secundario" onClick={() => setPagando(c)}>
                       Registrar pagamento
                     </button>
                   )}

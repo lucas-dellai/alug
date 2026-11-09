@@ -63,7 +63,7 @@ export function ComunicadosDoInquilino({ inquilino }) {
         <h2>
           Comunicados {aguardando > 0 && <span className="contador">{aguardando} aguardando</span>}
         </h2>
-        <button className="botao botao-pequeno botao-primario" onClick={() => setEnviando(true)}>
+        <button className="botao botao-pequeno botao-secundario" onClick={() => setEnviando(true)}>
           ✉ Enviar comunicado
         </button>
       </div>

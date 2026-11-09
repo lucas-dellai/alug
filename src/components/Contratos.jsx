@@ -215,7 +215,7 @@ export default function Contratos({ contratos, inquilinos, imoveis = [], pagamen
                     </td>
                     <td className="acoes">
                       {c.situacao.tipo !== 'encerrado' && (
-                        <button className="botao botao-pequeno botao-primario" onClick={() => setPagando(c)}>
+                        <button className="botao botao-pequeno botao-secundario" onClick={() => setPagando(c)}>
                           Registrar pagamento
                         </button>
                       )}

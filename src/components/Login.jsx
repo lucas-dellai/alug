@@ -26,14 +26,11 @@ export default function Login() {
   return (
     <div className="login">
       <section className="login-apresentacao">
-        <div className="login-marca-linha">
-          <img src={APP.marca} alt="" />
-          <span>{APP.nome}</span>
-        </div>
+        <img className="login-marca" src={APP.logo} alt={APP.nome} />
         <h1>
           Seus aluguéis,
           <br />
-          organizados.
+          <em>organizados.</em>
         </h1>
         <p>Inquilinos, contratos, documentos, cobranças e chamados em um só lugar.</p>
         <ul>

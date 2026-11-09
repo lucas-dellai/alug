@@ -16,7 +16,7 @@ import {
   resumoDoMes,
 } from '../utils';
 
-const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: '#d99a1e', Atrasado: 'var(--vermelho)' };
+const CORES_PAGAMENTO = { 'Em dia': 'var(--verde)', Pendente: 'var(--aviso)', Atrasado: 'var(--vermelho)' };
 
 export default function Inicio({ perfil, contratos, inquilinos, solicitacoes, pagamentos, custos = [], comunicados = [], informes = [], advertencias = [], regras, recarregar, irPara, abrirInquilino }) {
   const [reajuste, setReajuste] = useState(null);

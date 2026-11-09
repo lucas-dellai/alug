@@ -129,11 +129,8 @@ export default function Portal({ perfil, setPerfil }) {
       <header className="cabecalho">
         <div className="cabecalho-conteudo">
           <div className="marca">
-            <img src={APP.logo} alt="" width="34" height="34" />
-            <div>
-              <strong>{APP.nome}</strong>
-              <span>Portal do Inquilino</span>
-            </div>
+            <img className="marca-logo" src={APP.logo} alt={APP.nome} />
+            <span className="marca-rotulo">Portal do Inquilino</span>
           </div>
           <nav className="abas" aria-label="Seções">
             {botoesAbas('aba')}
@@ -305,7 +302,10 @@ export default function Portal({ perfil, setPerfil }) {
         )}
       </main>
 
-      <footer className="rodape">{APP.nome} · Portal do Inquilino</footer>
+      <footer className="rodape">
+        <img src={APP.logoNegativa} alt={APP.nome} />
+        <span>Portal do Inquilino</span>
+      </footer>
 
       <nav className="nav-inferior nav-inferior-4" aria-label="Seções">
         {botoesAbas('nav-item')}
