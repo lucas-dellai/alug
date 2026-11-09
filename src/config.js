@@ -2,8 +2,9 @@
 // Para trocar o nome ou a logo, altere só aqui.
 // As imagens ficam na pasta "public".
 export const APP = {
-  nome: 'Recceptor',
+  nome: 'Alug',
   slogan: 'Gestão de aluguéis',
-  logo: '/icone.png', // ícone quadrado (cabeçalho e aba do navegador)
-  marca: '/marca-branca.png', // só o desenho da casa, em branco (tela de login)
+  logo: '/alug-logo-principal.svg', // fundos claros (cabeçalho e tela de login)
+  logoNegativa: '/alug-logo-negativa.svg', // fundos escuros (rodapé)
+  icone: '/alug-icone-app-escuro.svg', // favicon e ícone do app
 };

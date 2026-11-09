@@ -155,11 +155,7 @@ function Sistema({ perfil, setPerfil }) {
       <header className="cabecalho">
         <div className="cabecalho-conteudo">
           <div className="marca">
-            <img src={APP.logo} alt="" width="34" height="34" />
-            <div>
-              <strong>{APP.nome}</strong>
-              <span>{APP.slogan}</span>
-            </div>
+            <img className="marca-logo" src={APP.logo} alt={APP.nome} />
           </div>
 
           <nav className="abas" aria-label="Seções">
@@ -209,7 +205,10 @@ function Sistema({ perfil, setPerfil }) {
         )}
       </main>
 
-      <footer className="rodape">{APP.nome} · Projeto acadêmico de Lucas Dellai · React + Vercel + Supabase</footer>
+      <footer className="rodape">
+        <img src={APP.logoNegativa} alt={APP.nome} />
+        <span>Projeto acadêmico de Lucas Dellai · React + Vercel + Supabase</span>
+      </footer>
 
       {/* Barra de navegação de baixo, só no celular */}
       <nav className="nav-inferior" aria-label="Seções">
