@@ -1,0 +1,14 @@
+{
+  "name": "Alug",
+  "short_name": "Alug",
+  "description": "Seus aluguéis, organizados.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f2ee",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/alug-icone-app-escuro.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/alug-icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/alug-icone-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
